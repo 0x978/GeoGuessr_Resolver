@@ -29,9 +29,30 @@ function Grab() {
     State: ${data.address.state}
     Latitude: ${lat}
     Longitude: ${lon}
+    `) } );}
+
+function Grab_Online() {
+    let x = document.getElementsByClassName("game_panoramaCanvas__nk_bK")[0] // this value might change on new game. culprit if broke
+    let keys = Object.keys(x);
+    let key = keys.find(key => key.startsWith("__reactFiber$"))
+    let foundProps = x[key]
+
+    let lat = foundProps.memoizedProps.children.props.lat
+    let lon = foundProps.memoizedProps.children.props.lng
+
+    getAddress(lat,lon).then(data => {
+        console.log(data)
+        alert(`
+    Country: ${data.address.country}
+    County: ${data.address.county}
+    Road: ${data.address.road}
+    State: ${data.address.state}
+    Latitude: ${lat}
+    Longitude: ${lon}
     `) } );
 
 }
+
 // async function returns JSON from API call.
 async function getAddress(lat,lon){
     let response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
@@ -43,6 +64,7 @@ async function getAddress(lat,lon){
 
 let onKeyDown = (e) => {
     if(e.keyCode === 86){Grab()}
+    if(e.keyCode === 87){Grab_Online()}
 }
 
 
