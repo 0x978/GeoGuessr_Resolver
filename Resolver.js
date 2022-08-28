@@ -43,7 +43,7 @@ async function getAddress(lat,lon){
 
 /* calculates which game mode the user is in.
 It is worth noting these html elements below aren't the best to use for finding the lon/lat props, but are convenient.
-For BR, it would be better to use "game_panoramaCanvas_nK_Bk" so I have to navigate through less children elements, but, this html element is on the same level as "game-layout__panorama-canvas" so is used so less code is written
+For BR, it would be better to use "game_panoramaCanvas_nK_Bk" so I have to navigate through less children elements, but, this html element is on the same level as "game-layout__panorama-canvas" so is used so that less code is written
 In future updates I should look into the html element with: "data-qa="panorama"" as they share the exact same props regardless of gamemode, meaning this function would be redundant, but for now this will do.
  */
 function handleGamemode(){
@@ -52,6 +52,9 @@ function handleGamemode(){
     }
     else if(document.getElementsByClassName("game-layout__panorama-canvas")[0] !== undefined){ // this html not being undefined suggests a user is in a singleplayer game
         grab("game-layout__panorama") // passing this elements' name to grab
+    }
+    else if(document.getElementsByClassName("game-panorama_panorama__rdhFg")[0] !== undefined){  // this html not being undefined suggests a user is in a duels game
+        grab("game-panorama_panorama__rdhFg")
     }
     else{alert("Unable to find Location, please try another gamemode.")}
 
