@@ -18,7 +18,7 @@ After this, just simply add the code in Resolver.js as a new script.
 - https://nominatim.org - For providing an API to use to reverse lookup Latitude and Longitude coordinates.
 - https://stackoverflow.com/questions/29321742/react-getting-a-component-from-a-dom-element-for-debugging - Despite not giving me the
   exact answer I was looking for, it helped me find a way to solve the problem I was having.
-- https://stackoverflow.com/questions/2694640/find-an-element-in-dom-based-on-an-attribute-value - For showing me how to USE the same HTML element to access required props, regardless of gamemode.
+- https://stackoverflow.com/questions/2694640/find-an-element-in-dom-based-on-an-attribute-value - For showing me how to use the same HTML element to access required props, regardless of gamemode.
 
 # Disclaimer:
 This completely ruins the fun of the game, I mostly made this just to see what was possible.
