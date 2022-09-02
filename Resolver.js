@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         geoGuessr Resolver 3.0
+// @name         geoGuessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      3.0
+// @version      4.5
 // @description  Cheat for Geoguessr, gets max points at the press of a button.
 // @author       0X69ED75
 // @match        https://www.geoguessr.com/*
@@ -9,17 +9,20 @@
 // @grant        none
 // ==/UserScript==
 
-if(localStorage.getItem("firstTimeUsingScript") === null){ // showing a message to user if its their first time using script.
-    localStorage.setItem("firstTimeUsingScript","true")
-    alert(`Thank you for using my script for Geoguessr.
+
+alert(`           Thanks for using geoGuessr Resolver by 0x69ED75
+           ============================================
+           => Please use the safer guess Option to avoid bans in competitive. <=
+           ============================================
             Controls:
+            'C': Instantly Place A "Safer" Guess (4500-5000).
             'B': Instantly Guess Correct Answer
             'V': Show best calculation of current location
             ----------------------------------------------------------
-            Please Note: Sometimes, the guess correct answer fails, 
-            if this happens just press B again
+            Please Note: Sometimes, the guess correct answer fails,
+            if this happens just press B or C again
             ----------------------------------------------------------`)
-}
+
 
 function displayLocation() {
     let coordinates = getCoordinates()
@@ -58,9 +61,13 @@ function getCoordinates(){ // Get coordinates through react props exposed by loo
 
 }
 
-function placeMarker(){
+function placeMarker(safeMode){
 
     let coordinates = getCoordinates()
+    if(safeMode){
+        coordinates[0] += (Math.random() / 2);
+        coordinates[1] += (Math.random() / 2);
+    }
 
     let start = document.getElementsByClassName("guess-map__canvas-container")[0] // html element containing needed props.
     let keys = Object.keys(start) // all keys
@@ -86,7 +93,8 @@ function submitUserGuess(){
 
 let onKeyDown = (e) => {
     if(e.keyCode === 86){displayLocation()} // key = v
-    if(e.keyCode === 66){placeMarker()} // key = b
+    if(e.keyCode === 66){placeMarker(false)} // key = b
+    if(e.keyCode === 67){placeMarker(true)} // key = c
 
 }
 
