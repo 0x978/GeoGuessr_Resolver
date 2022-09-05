@@ -12,6 +12,7 @@ After this, just simply add the code in Resolver.js as a new script.
 
 **Once in a game, either:**
 - press 'V' on the  keyboard, and the script will give the best description possible of the current location
+- press 'C' on the keyboard, and the script will make a guess scoring between 4500 and 5000 points
 - press 'B' on the keyboard, and the script will make a pinpoint accurate guess for maximum points.
 
 ## Credits:
