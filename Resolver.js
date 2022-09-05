@@ -63,6 +63,11 @@ function getCoordinates(){ // Get coordinates through react props exposed by loo
 
 function placeMarker(safeMode){
 
+    if(document.getElementsByClassName("guess-map__canvas-container")[0] === undefined){ // if this is not defined, the user must be in a streaks game, streaks mode uses a different map and therefore is calculated in a different function
+        placeMarkerStreaksMode()
+        return;
+    }
+
     let coordinates = getCoordinates()
     if(safeMode){
         coordinates[0] += (Math.random() / 2);
@@ -75,6 +80,30 @@ function placeMarker(safeMode){
     let onMarker = start[key].return.memoizedProps.onMarkerLocationChanged // getting the function which will allow me to place a marker on the map
 
     onMarker({lat:coordinates[0],lng:coordinates[1]}) // placing the marker on the map at the correct coordinates given by getCoordinates()
+
+    setTimeout(function() { // putting submit guess function in a timeout, to give the react props a second to update. Not doing this causes submission of guess before marker is placed.
+        submitUserGuess()
+    }, 1000);
+}
+
+function placeMarkerStreaksMode(){
+    let coordinates = getCoordinates()
+    let countryCode = ""
+
+    let element = document.getElementsByClassName("region-map_map__7jxcD")[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
+    let keys = Object.keys(element)
+    let reactKey = keys.find(key => key.startsWith("__reactFiber$"))
+    let placeMarkerFunction = element[reactKey].return.memoizedProps.onRegionSelected // This map works by selecting regions, not exact coordinates on a map, which is handles by the "onRegionSelected" function.
+
+    // the onRegionSelected method of the streaks map doesn't accept an object containing coordinates like the other game-modes.
+    // Instead, it accepts the country's 2-digit IBAN country code.
+    // For now, I will pass the locaitons coordinates into an API to retrieve the correct Country code, but I believe I can find a way without the API in the future.
+    // TODO: find a method without using an API since the API is never guaranteed.
+
+    getAddress(coordinates[0],coordinates[1]).then(data => { // using API to retrieve the country code at the current coordinates.
+        countryCode = data.address.country_code
+        placeMarkerFunction(countryCode) // passing the country code into the onRegionSelected method.
+    })
 
     setTimeout(function() { // putting submit guess function in a timeout, to give the react props a second to update. Not doing this causes submission of guess before marker is placed.
         submitUserGuess()
