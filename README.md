@@ -1,7 +1,7 @@
 # Geogussr Location resolver and Instant Guesser.
 
 A small Javascript application which finds the correct location in the online game Geogussr.
-The user has the choice to then see the correct location or instantly make the correct guess and recieve maximum points.
+The user has the choice to either instantly guess the correct location, or place a pin on it.
 
 ## How to use
 This application is a Tampermonkey Script, therefore, you will need to install the tampermonkey extension:
@@ -10,10 +10,17 @@ This application is a Tampermonkey Script, therefore, you will need to install t
 
 After this, just simply add the code in Resolver.js as a new script.
 
-**Once in a game, either:**
-- press 'V' on the  keyboard, and the script will give the best description possible of the current location
-- press 'C' on the keyboard, and the script will make a guess scoring between 4500 and 5000 points
-- press 'B' on the keyboard, and the script will make a pinpoint accurate guess for maximum points.
+## To use this script:
+
+  - Press **'1'** in game to place a pin on a location that will randomly score you between 4500 to 5000 score. (pressing "guess" is required to guess)
+
+  - Press **'2'** in game to place a pin on a location that will exactly score 5000 points. (pressing "guess" is required to guess)
+
+  - Press **'3'** in game to instantly randomly score 4500 to 5000 points (the script will attempt to guess for you, but is prone to fail. Press twice if 
+fails)
+
+  - Press **'4'** in game to instantly score 5000 points (the script will attempt to guess for you, but is prone to fail. Press twice if fails)
+
 
 ## Credits:
 - https://nominatim.org - For providing an API to use to reverse lookup Latitude and Longitude coordinates.
@@ -22,10 +29,7 @@ After this, just simply add the code in Resolver.js as a new script.
 - https://stackoverflow.com/questions/2694640/find-an-element-in-dom-based-on-an-attribute-value - For showing me how to use the same HTML element to access required props, regardless of gamemode.
 
 # Disclaimer:
-This completely ruins the fun of the game, I mostly made this just to see what was possible.
-
-Furthermore, I doubt this script is the most optimal solution to finding a Geoguessr location, It's likely there is a solution
-that doesn't need an API and *a lot* less code, but this solution is what felt most logical to me after looking at the Website's code.
+This completely ruins the fun of the game, I made this to experiment with creating Tampermonkey scripts to modify website behaviour, please use at your own risk.
 
 ## Screenshot:
 <img src="https://cdn.upload.systems/uploads/xbHlUDj4.jpg"/>
