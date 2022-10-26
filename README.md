@@ -21,6 +21,7 @@ fails)
 
   - Press **'4'** in game to instantly score 5000 points (the script will attempt to guess for you, but is prone to fail. Press twice if fails)
 
+- Press **'5'** in game to see a short description of the correct location.
 
 ## Credits:
 - https://nominatim.org - For providing an API to use to reverse lookup Latitude and Longitude coordinates.

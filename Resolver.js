@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         geoGuessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      6.0
-// @description  Cheat for Geoguessr, gets max points at the press of a button.
+// @version      6.5
+// @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points
 // @author       0X69ED75
 // @match        https://www.geoguessr.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geoguessr.com
@@ -12,22 +12,41 @@
 
 alert(`           Thanks for using geoGuessr Resolver by 0x978.
            ============================================
-           => Please use the safer guess Option to avoid bans in competitive. <=
+           Please use the safer guess Option to avoid bans in competitive
            ============================================
             Controls (UPDATED!):
             '1': Place marker on a "safe" guess (4500 - 5000)
             '2': Place marker on a "perfect" guess (5000)
             '3': Auto Guess A "safe" Answer (4500 - 5000).
             '4': Auto Guess "perfect" Answer (5000)
+            '5': Get a description of the correct location.
             ----------------------------------------------------------
-            If auto guess fails, press the key again.
-            ----------------------------------------------------------`)
+            If auto guess fails, press the key again.`)
 
 
 async function getAddress(lat,lon){
     let response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
     let data = await response.json()
     return data;
+}
+
+function displayLocationInfo() {
+    let coordinates = getCoordinates()
+    // api call with the lat lon to retrieve data.
+    getAddress(coordinates[0],coordinates[1]).then(data => {
+        console.log(data)
+        alert(`
+    Country: ${data.address.country}
+    County: ${data.address.county}
+    City: ${data.address.city}
+    Road: ${data.address.road}
+    State: ${data.address.state}
+    Postcode: ${data.address.postcode}
+    Village/Suburb: ${(data.address.village||data.address.suburb)}
+    
+   Postal Address: ${data.display_name}
+    `) } );
+
 }
 
 function placeMarker(safeMode,instantGuess){
@@ -122,6 +141,7 @@ let onKeyDown = (e) => {
     if(e.keyCode === 50){placeMarker(false,false)}
     if(e.keyCode === 51){placeMarker(true,true)}
     if(e.keyCode === 52){placeMarker(false,true)}
+    if(e.keyCode === 53){displayLocationInfo()}
 }
 
 
