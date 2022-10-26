@@ -121,7 +121,7 @@ let onKeyDown = (e) => {
     if(e.keyCode === 49){placeMarker(true,false)}
     if(e.keyCode === 50){placeMarker(false,false)}
     if(e.keyCode === 51){placeMarker(true,true)}
-    if(e.keyCode === 67){placeMarker(false,true)}
+    if(e.keyCode === 52){placeMarker(false,true)}
 }
 
 
