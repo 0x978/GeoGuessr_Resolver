@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         geoGuessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      7.0
-// @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points
-// @author       0X69ED75
+// @version      7.5
+// @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
+// @author       0x978
 // @match        https://www.geoguessr.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geoguessr.com
 // @grant        none
@@ -18,6 +18,7 @@ alert(`           Thanks for using geoGuessr Resolver by 0x978.
             '1': Place marker on a "safe" guess (4500 - 5000)
             '2': Place marker on a "perfect" guess (5000)
             '3': Get a description of the correct location.
+            '4': Open location in Google Maps (In a new tab)
             ----------------------------------------------------------`)
 
 
@@ -98,11 +99,18 @@ function getCoordinates(){
     return([found.lat(),found.lng()]) // lat and lng are functions returning the lat/lng values
 }
 
+function mapsFromCoords(){ // opens new Google Maps location using coords.
+    let [lat,lon] = getCoordinates()
+    if(!lat||!lon){return;}
+    window.open(`https://www.google.com/maps/place/${lat},${lon}`);
+}
+
 
 let onKeyDown = (e) => {
     if(e.keyCode === 49){placeMarker(true)}
     if(e.keyCode === 50){placeMarker(false)}
     if(e.keyCode === 51){displayLocationInfo()}
+    if(e.keyCode === 52){mapsFromCoords()}
 }
 
 
