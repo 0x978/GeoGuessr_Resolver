@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         geoGuessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      7.5
+// @version      8.0
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -19,6 +19,7 @@ alert(`           Thanks for using geoGuessr Resolver by 0x978.
             '2': Place marker on a "perfect" guess (5000)
             '3': Get a description of the correct location.
             '4': Open location in Google Maps (In a new tab)
+            '5': See opponent's guess distance from correct answer.
             ----------------------------------------------------------`)
 
 
@@ -46,9 +47,9 @@ function displayLocationInfo() {
 
 }
 
-function placeMarker(safeMode){
+function placeMarker(safeMode,skipGet,coords){
 
-    let [lat,lng] = getCoordinates()
+    let [lat,lng] = skipGet ? coords : getCoordinates()
     if(document.getElementsByClassName("guess-map__canvas-container")[0] === undefined){ // if this is not defined, the user must be in a streaks game, streaks mode uses a different map and therefore is calculated in a different function
         placeMarkerStreaksMode([lat,lng])
         return;
@@ -105,12 +106,64 @@ function mapsFromCoords(){ // opens new Google Maps location using coords.
     window.open(`https://www.google.com/maps/place/${lat},${lon}`);
 }
 
+// function matchEnemyGuess(){ broken due to geoguessr AC
+//     const enemyGuess = getEnemyGuess()
+//     console.log(enemyGuess)
+//     let eLat = enemyGuess.lat
+//     let eLng = enemyGuess.lng
+//     console.log(eLat,eLng)
+//     placeMarker(false,true,[eLat,eLng])
+// }
+
+function fetchEnemyDistance(){
+    const guessDistance = getEnemyGuess().distance
+    const km = Math.round(guessDistance / 1000)
+    const miles = Math.round(km * 0.621371)
+    alert(`Enemy guess is ${km} km (${miles} miles) away.
+    
+(If the user has not guessed this round, this is the previous round guess.)`)
+}
+
+function getEnemyGuess(){
+    let x = document.getElementsByClassName("game_layout__TO_jf")[0]
+    let keys = Object.keys(x)
+    let key = keys.find(key => key.startsWith("__reactFiber$"))
+    let props = x[key]
+    let teamArr = props.return.memoizedProps.gameState.teams
+    let enemyTeam = findEnemyTeam(teamArr,findID())
+    let enemyGuesses = enemyTeam.players[0].guesses
+    let recentGuess = enemyGuesses[enemyGuesses.length-1]
+    return recentGuess
+}
+
+function findID(){
+    let y = document.getElementsByClassName("user-nick_root__DUfvc")[0]
+    let keys = Object.keys(y)
+    let key = keys.find(key => key.startsWith("__reactFiber$"))
+    let props = y[key]
+    let id = props.return.memoizedProps.userId
+    return id
+}
+
+function findEnemyTeam(teams,userID){
+    let player0 = teams[0].players[0].playerId
+    if(player0 !== userID){
+        return teams[0]
+    }
+    else{
+        return teams[1]
+    }
+}
+
 
 let onKeyDown = (e) => {
-    if(e.keyCode === 49){placeMarker(true)}
-    if(e.keyCode === 50){placeMarker(false)}
+    if(e.keyCode === 49){placeMarker(true,false,undefined)}
+    if(e.keyCode === 50){placeMarker(false,false,undefined)}
     if(e.keyCode === 51){displayLocationInfo()}
     if(e.keyCode === 52){mapsFromCoords()}
+    if(e.keyCode === 53){fetchEnemyDistance()}
+    //if(e.keyCode === 54){matchEnemyGuess()} // broken due to geoguessr AC, not sure if possible to fix.
+
 }
 
 
