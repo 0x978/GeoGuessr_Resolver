@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         geoGuessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      8.0
+// @version      8.1
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -24,12 +24,12 @@ alert(`           Thanks for using geoGuessr Resolver by 0x978.
 
 
 async function getAddress(lat,lon){
-    let response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
     return await response.json();
 }
 
 function displayLocationInfo() {
-    let coordinates = getCoordinates()
+    const coordinates = getCoordinates()
     // api call with the lat lon to retrieve data.
     getAddress(coordinates[0],coordinates[1]).then(data => {
         console.log(data)
@@ -60,10 +60,10 @@ function placeMarker(safeMode,skipGet,coords){
         lng += (Math.random() / 2);
     }
 
-    let element = document.getElementsByClassName("guess-map__canvas-container")[0] // html element containing needed props.
-    let keys = Object.keys(element) // all keys
-    let key = keys.find(key => key.startsWith("__reactFiber$")) // the React key I need to access props
-    let placeMarker = element[key].return.memoizedProps.onMarkerLocationChanged // getting the function which will allow me to place a marker on the map
+    const element = document.getElementsByClassName("guess-map__canvas-container")[0] // html element containing needed props.
+    const keys = Object.keys(element) // all keys
+    const key = keys.find(key => key.startsWith("__reactFiber$")) // the React key I need to access props
+    const placeMarker = element[key].return.memoizedProps.onMarkerLocationChanged // getting the function which will allow me to place a marker on the map
 
     placeMarker({lat:lat,lng:lng}) // placing the marker on the map at the correct coordinates given by getCoordinates(). Must be passed as an Object.
 
@@ -71,10 +71,10 @@ function placeMarker(safeMode,skipGet,coords){
 
 function placeMarkerStreaksMode([lat,lng]){
 
-    let element = document.getElementsByClassName("region-map_map__7jxcD")[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
-    let keys = Object.keys(element)
-    let reactKey = keys.find(key => key.startsWith("__reactFiber$"))
-    let placeMarkerFunction = element[reactKey].return.memoizedProps.onRegionSelected // This map works by selecting regions, not exact coordinates on a map, which is handles by the "onRegionSelected" function.
+    const element = document.getElementsByClassName("region-map_map__7jxcD")[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
+    const keys = Object.keys(element)
+    const reactKey = keys.find(key => key.startsWith("__reactFiber$"))
+    const placeMarkerFunction = element[reactKey].return.memoizedProps.onRegionSelected // This map works by selecting regions, not exact coordinates on a map, which is handles by the "onRegionSelected" function.
 
     // the onRegionSelected method of the streaks map doesn't accept an object containing coordinates like the other game-modes.
     // Instead, it accepts the country's 2-digit IBAN country code.
@@ -82,7 +82,7 @@ function placeMarkerStreaksMode([lat,lng]){
     // TODO: find a method without using an API since the API is never guaranteed.
 
     getAddress(lat,lng).then(data => { // using API to retrieve the country code at the current coordinates.
-        let countryCode = data.address.country_code
+        const countryCode = data.address.country_code
         placeMarkerFunction(countryCode) // passing the country code into the onRegionSelected method.
     })
 
@@ -91,17 +91,17 @@ function placeMarkerStreaksMode([lat,lng]){
 // detects game mode and return appropriate coordinates.
 function getCoordinates(){
 
-    let x = document.getElementsByClassName("styles_root__3xbKq")[0]
-    let keys = Object.keys(x)
-    let key = keys.find(key => key.startsWith("__reactFiber$"))
-    let props = x[key]
-    let found = props.return.memoizedProps.panorama.position
+    const x = document.getElementsByClassName("styles_root__3xbKq")[0]
+    const keys = Object.keys(x)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = x[key]
+    const found = props.return.memoizedProps.panorama.position
 
     return([found.lat(),found.lng()]) // lat and lng are functions returning the lat/lng values
 }
 
 function mapsFromCoords(){ // opens new Google Maps location using coords.
-    let [lat,lon] = getCoordinates()
+    const [lat,lon] = getCoordinates()
     if(!lat||!lon){return;}
     window.open(`https://www.google.com/maps/place/${lat},${lon}`);
 }
@@ -117,42 +117,52 @@ function mapsFromCoords(){ // opens new Google Maps location using coords.
 
 function fetchEnemyDistance(){
     const guessDistance = getEnemyGuess().distance
+    if(guessDistance === null){return;}
     const km = Math.round(guessDistance / 1000)
     const miles = Math.round(km * 0.621371)
-    alert(`Enemy guess is ${km} km (${miles} miles) away.
-    
-(If the user has not guessed this round, this is the previous round guess.)`)
+    alert(`Enemy guess is ${km} km (${miles} miles) away.`)
 }
 
 function getEnemyGuess(){
-    let x = document.getElementsByClassName("game_layout__TO_jf")[0]
-    let keys = Object.keys(x)
-    let key = keys.find(key => key.startsWith("__reactFiber$"))
-    let props = x[key]
-    let teamArr = props.return.memoizedProps.gameState.teams
-    let enemyTeam = findEnemyTeam(teamArr,findID())
-    let enemyGuesses = enemyTeam.players[0].guesses
-    let recentGuess = enemyGuesses[enemyGuesses.length-1]
+    const x = document.getElementsByClassName("game_layout__TO_jf")[0]
+    const keys = Object.keys(x)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = x[key]
+    const teamArr = props.return.memoizedProps.gameState.teams
+    const enemyTeam = findEnemyTeam(teamArr,findID())
+    const enemyGuesses = enemyTeam.players[0].guesses
+    const recentGuess = enemyGuesses[enemyGuesses.length-1]
+
+    if(!isRoundValid(props.return.memoizedProps.gameState,enemyGuesses)){
+        alert("Error!: The user has not guessed this round.")
+        return null;
+    }
     return recentGuess
 }
 
 function findID(){
-    let y = document.getElementsByClassName("user-nick_root__DUfvc")[0]
-    let keys = Object.keys(y)
-    let key = keys.find(key => key.startsWith("__reactFiber$"))
-    let props = y[key]
-    let id = props.return.memoizedProps.userId
+    const y = document.getElementsByClassName("user-nick_root__DUfvc")[0]
+    const keys = Object.keys(y)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = y[key]
+    const id = props.return.memoizedProps.userId
     return id
 }
 
 function findEnemyTeam(teams,userID){
-    let player0 = teams[0].players[0].playerId
+    const player0 = teams[0].players[0].playerId
     if(player0 !== userID){
         return teams[0]
     }
     else{
         return teams[1]
     }
+}
+
+function isRoundValid(gameState,guesses){
+    const currentRound = gameState.currentRoundNumber
+    const numOfUserGuesses = guesses ? guesses.length : 0;
+    return currentRound === numOfUserGuesses
 }
 
 
