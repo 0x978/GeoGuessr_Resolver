@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         geoGuessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      8.1
+// @version      8.2
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -20,6 +20,7 @@ alert(`           Thanks for using geoGuessr Resolver by 0x978.
             '3': Get a description of the correct location.
             '4': Open location in Google Maps (In a new tab)
             '5': See opponent's guess distance from correct answer.
+            '6': See your guess distance from correct answer.
             ----------------------------------------------------------`)
 
 
@@ -165,6 +166,46 @@ function isRoundValid(gameState,guesses){
     return currentRound === numOfUserGuesses
 }
 
+function calculateDistanceGuess(){
+    const coords = getCoordinates()
+    const clat = coords[0] * (Math.PI / 180)
+    const clng = coords[1] * (Math.PI / 180)
+    const y = document.getElementsByClassName("guess-map__canvas-container")[0]
+    const keys = Object.keys(y)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = y[key]
+    const user = props.return.memoizedProps.markers[0]
+    if(!coords || !user){
+       return null
+    }
+    const ulat = user.lat * (Math.PI / 180)
+    const ulng = user.lng * (Math.PI / 180)
+
+    const distance = Math.acos(Math.sin(clat)*Math.sin(ulat) + Math.cos(clat) * Math.cos(ulat) * Math.cos(ulng - clng)) * 6371
+    return distance
+}
+
+function displayDistanceFromCorrect(){
+    let distance = Math.round(calculateDistanceGuess())
+    if(distance === null){
+        alert("Unable to fetch coordinates. Perhaps you have placed a marker this round?")
+        return
+    }
+    let text = `${distance} km (${Math.round(distance * 0.621371)} miles)`
+    setGuessButtonText(text)
+    //alert(`Your marker is ${distance} km (${Math.round(distance * 0.621371)} miles) away from the correct guess`)
+}
+
+function setGuessButtonText(text){
+    let x = document.getElementsByClassName("button_wrapper__NkcHZ")[1]
+    x.innerText = text
+}
+
+function toggleClick(disable){ // not used yet
+    let old = document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick
+    document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = null
+}
+
 
 let onKeyDown = (e) => {
     if(e.keyCode === 49){placeMarker(true,false,undefined)}
@@ -172,9 +213,6 @@ let onKeyDown = (e) => {
     if(e.keyCode === 51){displayLocationInfo()}
     if(e.keyCode === 52){mapsFromCoords()}
     if(e.keyCode === 53){fetchEnemyDistance()}
-    //if(e.keyCode === 54){matchEnemyGuess()} // broken due to geoguessr AC, not sure if possible to fix.
-
+    if(e.keyCode === 54){displayDistanceFromCorrect()}
 }
-
-
 document.addEventListener("keydown", onKeyDown);
