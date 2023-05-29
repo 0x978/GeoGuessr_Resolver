@@ -67,7 +67,8 @@ function placeMarker(safeMode,skipGet,coords){
     const placeMarker = element[key].return.memoizedProps.onMarkerLocationChanged // getting the function which will allow me to place a marker on the map
 
     placeMarker({lat:lat,lng:lng}) // placing the marker on the map at the correct coordinates given by getCoordinates(). Must be passed as an Object.
-
+    toggleClick(({lat:lat,lng:lng}))
+    displayDistanceFromCorrect({lat:lat,lng:lng})
 }
 
 function placeMarkerStreaksMode([lat,lng]){
@@ -166,7 +167,7 @@ function isRoundValid(gameState,guesses){
     return currentRound === numOfUserGuesses
 }
 
-function calculateDistanceGuess(){
+function calculateDistanceGuess(manual){
     const coords = getCoordinates()
     const clat = coords[0] * (Math.PI / 180)
     const clng = coords[1] * (Math.PI / 180)
@@ -174,7 +175,7 @@ function calculateDistanceGuess(){
     const keys = Object.keys(y)
     const key = keys.find(key => key.startsWith("__reactFiber$"))
     const props = y[key]
-    const user = props.return.memoizedProps.markers[0]
+    const user = manual ?? props.return.memoizedProps.markers[0]
     if(!coords || !user){
        return null
     }
@@ -185,10 +186,10 @@ function calculateDistanceGuess(){
     return distance
 }
 
-function displayDistanceFromCorrect(){
-    let distance = Math.round(calculateDistanceGuess())
+function displayDistanceFromCorrect(manual){
+    let distance = Math.round(calculateDistanceGuess(manual))
     if(distance === null){
-        alert("Unable to fetch coordinates. Perhaps you have placed a marker this round?")
+        alert("Unable to fetch coordinates. Perhaps you have not placed a marker this round?")
         return
     }
     let text = `${distance} km (${Math.round(distance * 0.621371)} miles)`
@@ -201,11 +202,34 @@ function setGuessButtonText(text){
     x.innerText = text
 }
 
-function toggleClick(disable){ // not used yet
-    let old = document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick
-    document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = null
+function toggleClick(coords){ // prevents user from making 5k guess to prevent bans.
+    const distance = calculateDistanceGuess(coords)
+    if(distance < 1 || isNaN(distance)){
+        const disableSpaceBar = (e) => {
+            if (e.keyCode === 32) {
+                e.stopImmediatePropagation();
+                preventedActionPopup()
+                document.removeEventListener("keyup", disableSpaceBar);
+            }
+        };
+        document.addEventListener("keyup", disableSpaceBar);
+        setTimeout(() => {
+            let old = document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick
+            document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = ( () => {
+                preventedActionPopup()
+                document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = (() => old())
+            })
+        },500)
+    }
 }
 
+function preventedActionPopup(){
+    alert(`Geoguessr Resolver has prevented you from making a perfect guess.
+            
+Making perfect guesses will very likely result in a ban from competitive.
+            
+Press "guess" again to proceed anyway.`)
+}
 
 let onKeyDown = (e) => {
     if(e.keyCode === 49){placeMarker(true,false,undefined)}
