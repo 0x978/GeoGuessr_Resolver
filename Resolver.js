@@ -66,6 +66,7 @@ function placeMarker(safeMode,skipGet,coords){
     const key = keys.find(key => key.startsWith("__reactFiber$")) // the React key I need to access props
     const placeMarker = element[key].return.memoizedProps.onMarkerLocationChanged // getting the function which will allow me to place a marker on the map
 
+    flag = false;
     placeMarker({lat:lat,lng:lng}) // placing the marker on the map at the correct coordinates given by getCoordinates(). Must be passed as an Object.
     toggleClick(({lat:lat,lng:lng}))
     displayDistanceFromCorrect({lat:lat,lng:lng})
@@ -203,24 +204,29 @@ function setGuessButtonText(text){
 }
 
 function toggleClick(coords){ // prevents user from making 5k guess to prevent bans.
-    const distance = calculateDistanceGuess(coords)
-    if(distance < 1 || isNaN(distance)){
-        const disableSpaceBar = (e) => {
-            if (e.keyCode === 32) {
+    const disableSpaceBar = (e) => {
+        if (e.keyCode === 32) {
+            const distance = calculateDistanceGuess()
+            if((distance < 1 || isNaN(distance)) && !flag){
                 e.stopImmediatePropagation();
                 preventedActionPopup()
                 document.removeEventListener("keyup", disableSpaceBar);
+                flag = true
             }
-        };
-        document.addEventListener("keyup", disableSpaceBar);
-        setTimeout(() => {
+        }
+    };
+    document.addEventListener("keyup", disableSpaceBar);
+    setTimeout(() => {
+        const distance = calculateDistanceGuess()
+        if((distance < 1 || isNaN(distance)) && !flag){
             let old = document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick
             document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = ( () => {
+                flag = true
                 preventedActionPopup()
                 document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = (() => old())
             })
-        },500)
-    }
+        }
+    },500)
 }
 
 function preventedActionPopup(){
@@ -240,3 +246,4 @@ let onKeyDown = (e) => {
     if(e.keyCode === 54){displayDistanceFromCorrect()}
 }
 document.addEventListener("keydown", onKeyDown);
+let flag = false
