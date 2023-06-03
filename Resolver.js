@@ -246,14 +246,17 @@ function injectOverride() {
 }
 
 function getBRGuesses() {
-    let gameState = document.getElementsByClassName("game_root__2vV1H")[0][Object.keys(document.getElementsByClassName("game_root__2vV1H")[0])[0]].return.memoizedProps.gameState
+    let gameRoot = document.getElementsByClassName("game_root__2vV1H")[0][Object.keys(document.getElementsByClassName("game_root__2vV1H")[0])[0]]
+    let gameState = gameRoot.return.memoizedProps.gameState
     let players = gameState.players
     let bestGuessDistance = Number.MAX_SAFE_INTEGER
     players.forEach(player => {
         let currGuess = player.coordinateGuesses[player.coordinateGuesses.length - 1]
-        let currDistance = currGuess.distance
-        if ((currDistance < bestGuessDistance) && currGuess.roundNumber === gameState.currentRoundNumber) {
-            bestGuessDistance = currDistance
+        if(currGuess){
+            let currDistance = currGuess.distance
+            if ((currDistance < bestGuessDistance) && currGuess.roundNumber === gameState.currentRoundNumber && player.playerId !== gameRoot.return.memoizedProps.currentPlayer.playerId) {
+                bestGuessDistance = currDistance
+            }
         }
     })
     if (bestGuessDistance === Number.MAX_SAFE_INTEGER) {
