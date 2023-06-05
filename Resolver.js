@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      9.0
+// @version      9.1
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -201,8 +201,11 @@ function displayDistanceFromCorrect(manual) {
 }
 
 function setGuessButtonText(text) {
-    let x = document.getElementsByClassName("button_wrapper__NkcHZ")[1]
-    x.innerText = text
+    let x = Array.from(document.getElementsByClassName("button_wrapper__NkcHZ"))
+    if(!x){
+        console.log("ERROR: Failed to calculate distance, unable to locate button.")
+        return null}
+    x[x.length-1].innerText = text
 }
 
 function toggleClick(coords) { // prevents user from making 5k guess to prevent bans.
