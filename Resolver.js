@@ -117,13 +117,13 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
 //     placeMarker(false,true,[eLat,eLng])
 // }
 
-function fetchEnemyDistance() {
+function fetchEnemyDistance() { // OUTPUT WILL NEED TO BE ROUNDED IF TO BE DISPLAYED
     const guessDistance = getEnemyGuess()
     if (guessDistance === null) {
         return;
     }
-    const km = Math.round(guessDistance / 1000)
-    const miles = Math.round(km * 0.621371)
+    const km = guessDistance / 1000
+    const miles = km * 0.621371
     return [km, miles]
 }
 
@@ -190,12 +190,13 @@ function getGuessDistance(manual) {
 }
 
 function displayDistanceFromCorrect(manual) {
-    let distance = Math.round(getGuessDistance(manual))
+    let unRoundedDistance = getGuessDistance(manual) // need unrounded distance for precise calculations later.
+    let distance = Math.round(unRoundedDistance)
     if (distance === null) {
         return
     }
-    let enemy = fetchEnemyDistance()
-    let text = enemy ? `${distance} km  ||  Enemy: ${enemy[0]} km` : `${distance} km (${Math.round(distance * 0.621371)} miles)`
+    let enemy = fetchEnemyDistance(true)
+    let text = enemy ? `${distance} km  ||  Enemy: ${Math.round(enemy[0])})} km || Damage: ${calculateScore(unRoundedDistance,enemy[0])}` : `${distance} km (${Math.round(distance * 0.621371)} miles)`
     setGuessButtonText(text)
     //alert(`Your marker is ${distance} km (${Math.round(distance * 0.621371)} miles) away from the correct guess`)
 }
@@ -267,6 +268,20 @@ function getBRGuesses() {
         return;
     }
     alert(`The best guess this round is ${Math.round(bestGuessDistance / 1000)} km from the correct location`)
+}
+
+function calculateScore(Udistance,eDistance){
+    let userScore = Math.round(5000*Math.exp((-10*Udistance/14916.862))) // Thank you to this reddit comment for laying out the math so beautifully after I failed to do so myself: https://www.reddit.com/r/geoguessr/comments/zqwgnr/how_the_hell_does_this_game_calculate_damage/j12rjkq/?context=3
+    let enemyScore = Math.round(5000*Math.exp((-10*eDistance/14916.862)))
+    console.log(Udistance, eDistance, "||", userScore, enemyScore, getMultiplier())
+    return (userScore - enemyScore) * getMultiplier()
+}
+
+function getMultiplier(){
+    let obj = document.getElementsByClassName("round-icon_container__bNbtn")[0]
+    if(!obj){return 1}
+    let prop = obj[Object?.keys(document.getElementsByClassName("round-icon_container__bNbtn")[0])[0]]?.return?.memoizedProps
+    return prop?.multiplier ?? 1
 }
 
 let onKeyDown = (e) => {
