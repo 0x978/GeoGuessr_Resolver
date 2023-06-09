@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      9.1
+// @version      9.2
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -27,7 +27,7 @@ async function getAddress(lat, lon) {
 }
 
 function displayLocationInfo() {
-    const coordinates = getCoordinates()
+    const coordinates = getUserCoordinates()
     // api call with the lat lon to retrieve data.
     getAddress(coordinates[0], coordinates[1]).then(data => {
         alert(`
@@ -47,7 +47,7 @@ function displayLocationInfo() {
 
 function placeMarker(safeMode, skipGet, coords) {
 
-    let [lat, lng] = skipGet ? coords : getCoordinates()
+    let [lat, lng] = skipGet ? coords : getUserCoordinates()
     if (document.getElementsByClassName("guess-map__canvas-container")[0] === undefined) { // if this is not defined, the user must be in a streaks game, streaks mode uses a different map and therefore is calculated in a different function
         placeMarkerStreaksMode([lat, lng])
         return;
@@ -90,7 +90,7 @@ function placeMarkerStreaksMode([lat, lng]) {
 }
 
 // detects game mode and return appropriate coordinates.
-function getCoordinates() {
+function getUserCoordinates() {
 
     const x = document.getElementsByClassName("styles_root__3xbKq")[0]
     const keys = Object.keys(x)
@@ -101,7 +101,7 @@ function getCoordinates() {
 }
 
 function mapsFromCoords() { // opens new Google Maps location using coords.
-    const [lat, lon] = getCoordinates()
+    const [lat, lon] = getUserCoordinates()
     if (!lat || !lon) {
         return;
     }
@@ -164,14 +164,14 @@ function findEnemyTeam(teams, userID) {
     }
 }
 
-function isRoundValid(gameState, guesses) {
+function isRoundValid(gameState, guesses) { // returns true if the given guess occurred in the current round.
     const currentRound = gameState.currentRoundNumber
     const numOfUserGuesses = guesses ? guesses.length : 0;
     return currentRound === numOfUserGuesses
 }
 
 function getGuessDistance(manual) {
-    const coords = getCoordinates()
+    const coords = getUserCoordinates()
     const clat = coords[0] * (Math.PI / 180)
     const clng = coords[1] * (Math.PI / 180)
     const y = document.getElementsByClassName("guess-map__canvas-container")[0]
@@ -196,7 +196,7 @@ function displayDistanceFromCorrect(manual) {
         return
     }
     let enemy = fetchEnemyDistance(true)
-    let text = enemy ? `${distance} km  ||  Enemy: ${Math.round(enemy[0])})} km || Damage: ${calculateScore(unRoundedDistance,enemy[0])}` : `${distance} km (${Math.round(distance * 0.621371)} miles)`
+    let text = enemy ? `${distance} km  ||  Enemy: ${Math.round(enemy[0])} km || Damage: ${calculateScore(unRoundedDistance,enemy[0])}` : `${distance} km (${Math.round(distance * 0.621371)} miles)`
     setGuessButtonText(text)
     //alert(`Your marker is ${distance} km (${Math.round(distance * 0.621371)} miles) away from the correct guess`)
 }
@@ -267,14 +267,15 @@ function getBRGuesses() {
         alert("There have been no guesses this round")
         return;
     }
-    alert(`The best guess this round is ${Math.round(bestGuessDistance / 1000)} km from the correct location`)
+    alert(`The best guess this round is ${Math.round(bestGuessDistance / 1000)} km from the correct location. (Not including your guess)`)
 }
 
 function calculateScore(Udistance,eDistance){
     let userScore = Math.round(5000*Math.exp((-10*Udistance/14916.862))) // Thank you to this reddit comment for laying out the math so beautifully after I failed to do so myself: https://www.reddit.com/r/geoguessr/comments/zqwgnr/how_the_hell_does_this_game_calculate_damage/j12rjkq/?context=3
     let enemyScore = Math.round(5000*Math.exp((-10*eDistance/14916.862)))
-    console.log(Udistance, eDistance, "||", userScore, enemyScore, getMultiplier())
-    return (userScore - enemyScore) * getMultiplier()
+    let damage = (userScore - enemyScore) * getMultiplier()
+    //console.log("distances:",Udistance, eDistance, "||", "scores:", userScore, enemyScore, "x:",getMultiplier(), "Damage:",damage)
+    return damage
 }
 
 function getMultiplier(){
