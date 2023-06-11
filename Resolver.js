@@ -206,6 +206,9 @@ function setGuessButtonText(text) {
     if(!x){
         console.log("ERROR: Failed to calculate distance, unable to locate button.")
         return null}
+    if((x[x.length-1].innerText).includes("PRO")){
+        return
+    }
     x[x.length-1].innerText = text
 }
 
