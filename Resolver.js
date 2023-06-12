@@ -196,7 +196,8 @@ function displayDistanceFromCorrect(manual) {
         return
     }
     let enemy = fetchEnemyDistance(true)
-    let text = enemy ? `${distance} km  ||  Enemy: ${Math.round(enemy[0])} km || Damage: ${calculateScore(unRoundedDistance,enemy[0])}` : `${distance} km (${Math.round(distance * 0.621371)} miles)`
+    const BR = getBRGuesses()
+    let text = enemy ? `${distance} km  ||  Enemy: ${Math.round(enemy[0])} km || Damage: ${calculateScore(unRoundedDistance,enemy[0])}` : BR !== null ? `${distance} km || Best Enemy Guess: ${BR} km` : `${distance} km (${Math.round(distance * 0.621371)} miles)` // this got pretty hard to read as I added more features
     setGuessButtonText(text)
     //alert(`Your marker is ${distance} km (${Math.round(distance * 0.621371)} miles) away from the correct guess`)
 }
@@ -254,6 +255,9 @@ function injectOverride() {
 
 function getBRGuesses() {
     let gameRoot = document.getElementsByClassName("game_root__2vV1H")[0][Object.keys(document.getElementsByClassName("game_root__2vV1H")[0])[0]]
+    if(!gameRoot){
+        return null
+    }
     let gameState = gameRoot.return.memoizedProps.gameState
     let players = gameState.players
     let bestGuessDistance = Number.MAX_SAFE_INTEGER
@@ -267,10 +271,18 @@ function getBRGuesses() {
         }
     })
     if (bestGuessDistance === Number.MAX_SAFE_INTEGER) {
+        return null;
+    }
+    return Math.round(bestGuessDistance / 1000)
+}
+
+function displayBRGuesses(){
+    const distance = getBRGuesses()
+    if (distance === null) {
         alert("There have been no guesses this round")
         return;
     }
-    alert(`The best guess this round is ${Math.round(bestGuessDistance / 1000)} km from the correct location. (Not including your guess)`)
+    alert(`The best guess this round is ${distance} km from the correct location. (Not including your guess)`)
 }
 
 function calculateScore(Udistance,eDistance){
@@ -302,7 +314,7 @@ let onKeyDown = (e) => {
         mapsFromCoords()
     }
     if (e.keyCode === 53) {
-        getBRGuesses()
+        displayBRGuesses()()
     }
 }
 document.addEventListener("keydown", onKeyDown);
