@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      9.2
+// @version      9.7
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -254,11 +254,12 @@ function injectOverride() {
 }
 
 function getBRGuesses() {
-    let gameRoot = document.getElementsByClassName("game_root__2vV1H")[0][Object.keys(document.getElementsByClassName("game_root__2vV1H")[0])[0]]
+    let gameRoot = document.getElementsByClassName("game_root__2vV1H")[0]
     if(!gameRoot){
         return null
     }
-    let gameState = gameRoot.return.memoizedProps.gameState
+    let keys = gameRoot[Object.keys(document.getElementsByClassName("game_root__2vV1H")[0])[0]]
+    let gameState = keys.return.memoizedProps.gameState
     let players = gameState.players
     let bestGuessDistance = Number.MAX_SAFE_INTEGER
     players.forEach(player => {
@@ -314,7 +315,7 @@ let onKeyDown = (e) => {
         mapsFromCoords()
     }
     if (e.keyCode === 53) {
-        displayBRGuesses()()
+        displayBRGuesses()
     }
 }
 document.addEventListener("keydown", onKeyDown);
