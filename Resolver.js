@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      9.7
+// @version      10.0b
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -49,7 +49,12 @@ function placeMarker(safeMode, skipGet, coords) {
 
     let [lat, lng] = skipGet ? coords : getUserCoordinates()
     if (document.getElementsByClassName("guess-map__canvas-container")[0] === undefined) { // if this is not defined, the user must be in a streaks game, streaks mode uses a different map and therefore is calculated in a different function
-        placeMarkerStreaksMode([lat, lng])
+        if(document.getElementsByClassName("region-map_map__7jxcD")[0]){
+            placeMarkerStreaksMode([lat, lng])
+        }
+        else{
+            panicPlaceCoords()
+        }
         return;
     }
 
@@ -86,7 +91,37 @@ function placeMarkerStreaksMode([lat, lng]) {
         const countryCode = data.address.country_code
         placeMarkerFunction(countryCode) // passing the country code into the onRegionSelected method.
     })
+}
 
+function panicPlaceCoords(){ // I have no idea what Geoguessr did to hide the new place function so well, but I've figured it out.
+    const x = document.getElementsByClassName("coordinate-map_canvasContainer__7d8Yw")[0]
+    const keys = Object.keys(x)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = x[key]
+
+    const clickProperty = props.return.memoizedProps.map.__e3_.click
+    const dynamicIndex = Object.keys(clickProperty)[0]
+    const clickFunction = clickProperty[dynamicIndex].xe
+
+    let coords = panicGetCoords()
+
+    let y = {
+        "latLng": {
+            "lat": coords.lat,
+            "lng": coords.lng,
+        }
+    }
+    clickFunction(y)
+    alert("Backup Coordinate Placement Activated: \n \n You MUST move your map marker slightly before submitting your guess. Not doing so will cause your web browser to crash.")
+}
+
+function panicGetCoords(){
+    const x = document.getElementsByClassName("styles_root__3xbKq")[0]
+    const keys = Object.keys(x)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = x[key]
+    const found = props.return.memoizedProps.panorama.position
+    return found
 }
 
 // detects game mode and return appropriate coordinates.
@@ -344,4 +379,3 @@ if (!await GM.getValue("8.4")) {
     Added ability to view enemy's guess distance and your guess distance, replaces "submit" button text.
     `)
 }
-
