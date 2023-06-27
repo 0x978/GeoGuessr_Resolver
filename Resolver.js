@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      10.0b
+// @version      10.0b2
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -113,6 +113,7 @@ function panicPlaceCoords(){ // I have no idea what Geoguessr did to hide the ne
     }
     clickFunction(y)
     alert("Backup Coordinate Placement Activated: \n \n You MUST move your map marker slightly before submitting your guess. Not doing so will cause your web browser to crash.")
+    disableSubmit()
 }
 
 function panicGetCoords(){
@@ -122,6 +123,32 @@ function panicGetCoords(){
     const props = x[key]
     const found = props.return.memoizedProps.panorama.position
     return found
+}
+
+function disableSubmit(){
+    const disableSpaceBar = (e) => {
+        if (e.keyCode === 32) {
+            e.stopImmediatePropagation();
+            preventedActionPopup()
+            alert("Move the marker before trying to guess. This alert has prevented your browser from crashing")
+            //document.removeEventListener("keyup", disableSpaceBar);
+        }
+    }
+    document.addEventListener("keyup", disableSpaceBar);
+
+    setTimeout(() => {
+        let old = document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick
+        document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = () => {
+            alert("Move the marker before trying to guess. This alert has prevented your browser from crashing")
+        }
+        const changedGuess = () =>{
+            console.log("RAN")
+            document.removeEventListener("keyup", disableSpaceBar);
+            document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = old
+        }
+
+        document.getElementsByClassName("coordinate-map_canvas__Ksics")[0].addEventListener("click",changedGuess)
+    },500)
 }
 
 // detects game mode and return appropriate coordinates.
