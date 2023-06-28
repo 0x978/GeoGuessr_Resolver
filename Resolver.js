@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      10.0b2
+// @version      10.0b3
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -54,6 +54,7 @@ function placeMarker(safeMode, skipGet, coords) {
         }
         else{
             panicPlaceCoords()
+            return;
         }
         return;
     }
@@ -126,23 +127,24 @@ function panicGetCoords(){
 }
 
 function disableSubmit(){
+    //document.removeEventListener("keydown",getEventListeners(document).keydown[getEventListeners(document).keydown.length-1].listener) // works in console but not in script :/ TODO: overwrite addEventListener to prevent geoguessr devs adding things to the same buttons I use
     const disableSpaceBar = (e) => {
         if (e.keyCode === 32) {
             e.stopImmediatePropagation();
             preventedActionPopup()
             alert("Move the marker before trying to guess. This alert has prevented your browser from crashing")
-            //document.removeEventListener("keyup", disableSpaceBar);
         }
     }
     document.addEventListener("keyup", disableSpaceBar);
 
     setTimeout(() => {
+        document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0].innerText = ">>> Move Marker To Prevent Crash <<<"
         let old = document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick
         document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = () => {
             alert("Move the marker before trying to guess. This alert has prevented your browser from crashing")
         }
         const changedGuess = () =>{
-            console.log("RAN")
+            document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0].innerText = "Crash Prevented :)"
             document.removeEventListener("keyup", disableSpaceBar);
             document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = old
         }
@@ -150,10 +152,8 @@ function disableSubmit(){
         document.getElementsByClassName("coordinate-map_canvas__Ksics")[0].addEventListener("click",changedGuess)
     },500)
 }
-
 // detects game mode and return appropriate coordinates.
 function getUserCoordinates() {
-
     const x = document.getElementsByClassName("styles_root__3xbKq")[0]
     const keys = Object.keys(x)
     const key = keys.find(key => key.startsWith("__reactFiber$"))
@@ -380,6 +380,7 @@ let onKeyDown = (e) => {
         displayBRGuesses()
     }
 }
+
 document.addEventListener("keydown", onKeyDown);
 let flag = false
 
@@ -396,13 +397,3 @@ document.getElementsByClassName("header_logo__vV0HK")[0].innerText = `
                 is automatically calculated when ever you place a marker on the map`
 
 
-if (!await GM.getValue("8.4")) {
-    GM.setValue("8.4", "true");
-    alert(`Geoguessr Resolver has updated to version 8.3:
-    <------------------------- Controls are now over there
-
-    Now prevents scoring 5k in duels (to avoid bans). To bypass this, simply press "guess" again.
-    Stopped annoying controls popup on each page load. Now, this dialog will appear once per update.
-    Added ability to view enemy's guess distance and your guess distance, replaces "submit" button text.
-    `)
-}
