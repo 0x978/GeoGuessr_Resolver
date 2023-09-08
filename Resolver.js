@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      10.0b5
+// @version      10.0b6
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -394,6 +394,19 @@ function displayBRGuesses(){
 //     return prop?.multiplier ?? 1
 // }
 
+function setInnerText(){
+    const text = `
+                Geoguessr Resolver Loaded Successfully
+
+                IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION: https://text.0x978.com/geoGuessr
+
+                 Please read the above update to GeoGuessr anticheat
+                `
+    if(document.getElementsByClassName("header_logo__vV0HK")[0]){
+        document.getElementsByClassName("header_logo__vV0HK")[0].innerText = text
+    }
+}
+
 GM_webRequest([
     { selector: 'https://www.geoguessr.com/api/v4/trails', action: 'cancel' },
 ]);
@@ -416,6 +429,7 @@ let onKeyDown = (e) => {
     }
 }
 
+setInnerText()
 document.addEventListener("keydown", onKeyDown);
 let flag = false
 
