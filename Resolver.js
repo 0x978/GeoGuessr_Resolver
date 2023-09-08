@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      10.0b4
+// @version      10.0b5
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geoguessr.com
-// @grant        none
+// @grant        GM_webRequest
 // ==/UserScript==
 
 window.alert = function (message) { // Devs tried to overwrite alert to detect script. I had already stopped using alert, but i'd rather they didn't override this anyway.
@@ -163,13 +163,37 @@ function disableSubmit(){
 }
 // detects game mode and return appropriate coordinates.
 function getUserCoordinates() {
-    const x = document.getElementsByClassName("styles_root__3xbKq")[0]
+    const x = document.getElementsByClassName("game-panorama_panorama__Yxrot")[0]
+    if(x === undefined){
+        if(document.getElementsByClassName("game-layout__panorama-canvas")[0]){
+            return backupGetUserCoordinates()
+        }
+        else{
+            let y = document.getElementsByClassName("gm-style")[0].parentNode.parentNode
+            const keys = Object.keys(y)
+            const key = keys.find(key => key.startsWith("__reactFiber$"))
+            const props = y[key]
+            const found = props.return.memoizedProps
+            return [found.lat,found.lng]
+        }
+
+    }
     const keys = Object.keys(x)
     const key = keys.find(key => key.startsWith("__reactFiber$"))
     const props = x[key]
-    const found = props.return.memoizedProps.panorama.position
+    const found = props.return.memoizedProps.panoramaRef.current.location.latLng
     return ([found.lat(), found.lng()]) // lat and lng are functions returning the lat/lng values
 }
+
+function backupGetUserCoordinates(){
+    let x = document.getElementsByClassName("game-layout__panorama-canvas")[0]
+    const keys = Object.keys(x)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = x[key]
+    const found =  props.memoizedProps.children.props
+    return [found.lat,found.lng]
+}
+
 
 function mapsFromCoords() { // opens new Google Maps location using coords.
     const [lat, lon] = getUserCoordinates()
@@ -188,34 +212,35 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
 //     placeMarker(false,true,[eLat,eLng])
 // }
 
-function fetchEnemyDistance() { // OUTPUT WILL NEED TO BE ROUNDED IF TO BE DISPLAYED
-    const guessDistance = getEnemyGuess()
-    if (guessDistance === null) {
-        return;
-    }
-    const km = guessDistance / 1000
-    const miles = km * 0.621371
-    return [km, miles]
-}
-
-function getEnemyGuess() {
-    const x = document.getElementsByClassName("game_layout__TO_jf")[0]
-    if (!x) {
-        return null
-    }
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    const teamArr = props.return.memoizedProps.gameState.teams
-    const enemyTeam = findEnemyTeam(teamArr, findID())
-    const enemyGuesses = enemyTeam.players[0].guesses
-    const recentGuess = enemyGuesses[enemyGuesses.length - 1]
-
-    if (!isRoundValid(props.return.memoizedProps.gameState, enemyGuesses)) {
-        return null;
-    }
-    return recentGuess.distance
-}
+// Broken due to geoguessr fixes
+// function fetchEnemyDistance() { // OUTPUT WILL NEED TO BE ROUNDED IF TO BE DISPLAYED
+//     const guessDistance = getEnemyGuess()
+//     if (guessDistance === null) {
+//         return;
+//     }
+//     const km = guessDistance / 1000
+//     const miles = km * 0.621371
+//     return [km, miles]
+// }
+//
+// function getEnemyGuess() {
+//     const x = document.getElementsByClassName("game_layout__TO_jf")[0]
+//     if (!x) {
+//         return null
+//     }
+//     const keys = Object.keys(x)
+//     const key = keys.find(key => key.startsWith("__reactFiber$"))
+//     const props = x[key]
+//     const teamArr = props.return.memoizedProps.gameState.teams
+//     const enemyTeam = findEnemyTeam(teamArr, findID())
+//     const enemyGuesses = enemyTeam.players[0].guesses
+//     const recentGuess = enemyGuesses[enemyGuesses.length - 1]
+//
+//     if (!isRoundValid(props.return.memoizedProps.gameState, enemyGuesses)) {
+//         return null;
+//     }
+//     return recentGuess.distance
+// }
 
 function findID() {
     const y = document.getElementsByClassName("user-nick_root__DUfvc")[0]
@@ -266,22 +291,18 @@ function displayDistanceFromCorrect(manual) {
     if (distance === null) {
         return
     }
-    let enemy = fetchEnemyDistance(true)
-    const BR = getBRGuesses()
-    let text = enemy ? `${distance} km  ||  Enemy: ${Math.round(enemy[0])} km || Damage: ${calculateScore(unRoundedDistance,enemy[0])}` : BR !== null ? `${distance} km || Best Enemy Guess: ${BR} km` : `${distance} km (${Math.round(distance * 0.621371)} miles)` // this got pretty hard to read as I added more features
+    // let enemy = fetchEnemyDistance(true) patched
+    // const BR = getBRGuesses() patched
+    let text = `${distance} km (${Math.round(distance * 0.621371)} miles)`
     setGuessButtonText(text)
-    //alert(`Your marker is ${distance} km (${Math.round(distance * 0.621371)} miles) away from the correct guess`)
 }
 
 function setGuessButtonText(text) {
-    let x = Array.from(document.getElementsByClassName("button_wrapper__NkcHZ"))
+    let x = document.getElementsByClassName("button_button__aR6_e button_variantPrimary__u3WzI")[0]
     if(!x){
         console.log("ERROR: Failed to calculate distance, unable to locate button.")
         return null}
-    if((x[x.length-1].innerText).includes("PRO")){
-        return
-    }
-    x[x.length-1].innerText = text
+    x.innerText = text
 }
 
 function toggleClick(coords) { // prevents user from making 5k guess to prevent bans.
@@ -357,20 +378,25 @@ function displayBRGuesses(){
     alert(`The best guess this round is ${distance} km from the correct location. (Not including your guess)`)
 }
 
-function calculateScore(Udistance,eDistance){
-    let userScore = Math.round(5000*Math.exp((-10*Udistance/14916.862))) // Thank you to this reddit comment for laying out the math so beautifully after I failed to do so myself: https://www.reddit.com/r/geoguessr/comments/zqwgnr/how_the_hell_does_this_game_calculate_damage/j12rjkq/?context=3
-    let enemyScore = Math.round(5000*Math.exp((-10*eDistance/14916.862)))
-    let damage = (userScore - enemyScore) * getMultiplier()
-    //console.log("distances:",Udistance, eDistance, "||", "scores:", userScore, enemyScore, "x:",getMultiplier(), "Damage:",damage)
-    return damage
-}
+// Useless after changes by geoguessr
+// function calculateScore(Udistance,eDistance){
+//     let userScore = Math.round(5000*Math.exp((-10*Udistance/14916.862))) // Thank you to this reddit comment for laying out the math so beautifully after I failed to do so myself: https://www.reddit.com/r/geoguessr/comments/zqwgnr/how_the_hell_does_this_game_calculate_damage/j12rjkq/?context=3
+//     let enemyScore = Math.round(5000*Math.exp((-10*eDistance/14916.862)))
+//     let damage = (userScore - enemyScore) * getMultiplier()
+//     //console.log("distances:",Udistance, eDistance, "||", "scores:", userScore, enemyScore, "x:",getMultiplier(), "Damage:",damage)
+//     return damage
+// }
 
-function getMultiplier(){
-    let obj = document.getElementsByClassName("round-icon_container__bNbtn")[0]
-    if(!obj){return 1}
-    let prop = obj[Object?.keys(document.getElementsByClassName("round-icon_container__bNbtn")[0])[0]]?.return?.memoizedProps
-    return prop?.multiplier ?? 1
-}
+// function getMultiplier(){
+//     let obj = document.getElementsByClassName("round-icon_container__bNbtn")[0]
+//     if(!obj){return 1}
+//     let prop = obj[Object?.keys(document.getElementsByClassName("round-icon_container__bNbtn")[0])[0]]?.return?.memoizedProps
+//     return prop?.multiplier ?? 1
+// }
+
+GM_webRequest([
+    { selector: 'https://www.geoguessr.com/api/v4/trails', action: 'cancel' },
+]);
 
 let onKeyDown = (e) => {
     if (e.keyCode === 49) {
@@ -393,16 +419,12 @@ let onKeyDown = (e) => {
 document.addEventListener("keydown", onKeyDown);
 let flag = false
 
-document.getElementsByClassName("header_logo__vV0HK")[0].innerText = `
+document.getElementsByClassName("header_logo__hQawV")[0].innerText = `
                 Geoguessr Resolver Loaded Successfully
 
-                    Controls (UPDATED!):
-                '1': Place marker on a "safe" guess (4500 - 5000)
-                '2': Place marker on a "perfect" guess (5000)
-                '3': Get a description of the correct location.
-                '4': Open location in Google Maps (In a new tab)
+                IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION: https://text.0x978.com/geoGuessr
 
-                After pressing '1' or '2' Your guess distance and Enemy Guess distance
-                is automatically calculated when ever you place a marker on the map`
+                 Please read the above update to GeoGuessr anticheat
+                `
 
 
