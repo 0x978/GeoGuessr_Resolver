@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver (dev)
 // @namespace    http://tampermonkey.net/
-// @version      10.0b6
+// @version      10.0b7
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -163,7 +163,7 @@ function disableSubmit(){
 }
 // detects game mode and return appropriate coordinates.
 function getUserCoordinates() {
-    const x = document.getElementsByClassName("game-panorama_panorama__Yxrot")[0]
+    const x = document.querySelectorAll('[class^="game-panorama_panorama__"]')[0]
     if(x === undefined){
         if(document.getElementsByClassName("game-layout__panorama-canvas")[0]){
             return backupGetUserCoordinates()
@@ -433,12 +433,5 @@ setInnerText()
 document.addEventListener("keydown", onKeyDown);
 let flag = false
 
-document.getElementsByClassName("header_logo__hQawV")[0].innerText = `
-                Geoguessr Resolver Loaded Successfully
-
-                IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION: https://text.0x978.com/geoGuessr
-
-                 Please read the above update to GeoGuessr anticheat
-                `
 
 
