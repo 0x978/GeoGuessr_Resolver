@@ -9,7 +9,7 @@ This application is a Tampermonkey Script, therefore, you will need to install t
 - (Chromium browsers): https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en
 - (Firefox):  https://addons.mozilla.org/en-GB/firefox/addon/tampermonkey/
 
-After this, just simply add the code in Resolver.js as a new script.
+After this, just simply add the code in Release.js as a new script.
 
 ## To use this script:
 

@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Geoguessr Resolver (dev)
+// @name         Geoguessr Resolver (BETA)
 // @namespace    http://tampermonkey.net/
 // @version      10.0b7
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
@@ -77,7 +77,10 @@ function placeMarker(safeMode, skipGet, coords) {
 
 function placeMarkerStreaksMode([lat, lng]) {
 
-    const element = document.getElementsByClassName("region-map_map__7jxcD")[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
+    let element = document.getElementsByClassName("region-map_map__5e4h8")[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
+    if(!element){
+        element = document.getElementsByClassName("region-map_map__7jxcD")[0]
+    }
     const keys = Object.keys(element)
     const reactKey = keys.find(key => key.startsWith("__reactFiber$"))
     const placeMarkerFunction = element[reactKey].return.memoizedProps.onRegionSelected // This map works by selecting regions, not exact coordinates on a map, which is handles by the "onRegionSelected" function.
@@ -186,11 +189,11 @@ function getUserCoordinates() {
 }
 
 function backupGetUserCoordinates(){
-    let x = document.getElementsByClassName("game-layout__panorama-canvas")[0]
+    let x = document.querySelector('div[data-qa="panorama"]');
     const keys = Object.keys(x)
     const key = keys.find(key => key.startsWith("__reactFiber$"))
     const props = x[key]
-    const found =  props.memoizedProps.children.props
+    const found =  props.return.memoizedProps
     return [found.lat,found.lng]
 }
 
@@ -397,10 +400,10 @@ function displayBRGuesses(){
 function setInnerText(){
     const text = `
                 Geoguessr Resolver Loaded Successfully
+                
+                This is the beta versionm things will be broken.
 
                 IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION: https://text.0x978.com/geoGuessr
-
-                 Please read the above update to GeoGuessr anticheat
                 `
     if(document.getElementsByClassName("header_logo__vV0HK")[0]){
         document.getElementsByClassName("header_logo__vV0HK")[0].innerText = text
