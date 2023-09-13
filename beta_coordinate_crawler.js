@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver Release
 // @namespace    http://tampermonkey.net/
-// @version      9.8.3
+// @version      10b_Crawler
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -74,7 +74,7 @@ function placeMarkerStreaksMode([lat, lng]) {
 
     let element = document.getElementsByClassName("region-map_map__5e4h8")[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
     if(!element){
-       element = document.getElementsByClassName("region-map_map__7jxcD")[0]
+        element = document.getElementsByClassName("region-map_map__7jxcD")[0]
     }
     const keys = Object.keys(element)
     const reactKey = keys.find(key => key.startsWith("__reactFiber$"))
@@ -90,6 +90,23 @@ function placeMarkerStreaksMode([lat, lng]) {
         placeMarkerFunction(countryCode) // passing the country code into the onRegionSelected method.
     })
 
+}
+
+function coordinateCrawler(){
+    let x = document.querySelector('div[data-qa="panorama"]');
+    const keys = Object.keys(x)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = x[key]
+    let path = props
+
+    timeout = 0
+    flag = false
+    while(timeout < 10 && flag == false){
+        path = path.return
+        console.log(path)
+        console.log(timeout)
+        timeout++
+    }
 }
 
 // detects game mode and return appropriate coordinates.
