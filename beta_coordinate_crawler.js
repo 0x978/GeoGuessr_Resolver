@@ -27,7 +27,7 @@ async function getAddress(lat, lon) {
 }
 
 function displayLocationInfo() {
-    const coordinates = getUserCoordinates()
+    const coordinates = coordinateClimber()
     // api call with the lat lon to retrieve data.
     getAddress(coordinates[0], coordinates[1]).then(data => {
         alert(`
@@ -47,15 +47,19 @@ function displayLocationInfo() {
 
 function placeMarker(safeMode, skipGet, coords) {
 
-    let [lat, lng] = skipGet ? coords : getUserCoordinates()
+    let [lat, lng] = skipGet ? coords : coordinateClimber()
     if (document.getElementsByClassName("guess-map__canvas-container")[0] === undefined) { // if this is not defined, the user must be in a streaks game, streaks mode uses a different map and therefore is calculated in a different function
         placeMarkerStreaksMode([lat, lng])
         return;
     }
 
     if (safeMode) {
-        lat += (Math.random() / 2);
-        lng += (Math.random() / 2);
+        const sway = [Math.random() > 0.5,Math.random() > 0.5]
+        const multiplier = Math.random() * 4
+        const horizontalAmount = Math.random() * multiplier
+        const verticalAmount = Math.random() * multiplier
+        sway[0] ? lat += verticalAmount : lat -= verticalAmount
+        sway[1] ? lng += horizontalAmount : lat -= horizontalAmount
     }
 
     const element = document.getElementsByClassName("guess-map__canvas-container")[0] // html element containing needed props.
@@ -92,47 +96,47 @@ function placeMarkerStreaksMode([lat, lng]) {
 
 }
 
-function coordinateCrawler(){
-    let x = document.querySelector('div[data-qa="panorama"]');
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    let path = props
+function coordinateClimber(){
+    let timeout = 10
+    let path = document.querySelector('div[data-qa="panorama"]');
+    while (timeout > 0){
+        const props = path[Object.keys(path).find(key => key.startsWith("__reactFiber$"))]
+        const checkReturns = iterateReturns(props)
+        if(checkReturns){
+            return checkReturns
+        }
+        path = path.parentNode
+        timeout--
+    }
+    alert("Failed to find co-ordinates. Please make an issue on GitHub or GreasyFork. " +
+        "Please make sure you mention the gamemode")
+}
 
-    timeout = 0
-    flag = false
-    while(timeout < 10 && flag == false){
-        path = path.return
-        console.log(path)
-        console.log(timeout)
-        timeout++
+function iterateReturns(element){
+    let timeout = 10
+    let path = element
+    while(timeout > 0){
+        const coords = checkProps(path.memoizedProps)
+        if(coords){
+            return coords
+        }
+        path = element.return
+        timeout--
     }
 }
 
-// detects game mode and return appropriate coordinates.
-function getUserCoordinates() {
-    let x = document.querySelector('div[data-qa="panorama"]');
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    const found =  props.return.memoizedProps
-    return [found.lat,found.lng]
-}
-
-function backupGetUserCoordinates(){
-    const x = document.querySelectorAll('[class^="game-panorama_panorama__"]')[0]
-    if(x === undefined){
-        return backupGetUserCoordinates()
+function checkProps(props){
+    if(props?.panoramaRef){
+        const found = props.panoramaRef.current.location.latLng
+        return [found.lat(),found.lng()]
     }
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    const found = props.return.memoizedProps.panoramaRef.current.location.latLng
-    return ([found.lat(), found.lng()]) // lat and lng are functions returning the lat/lng values
+    if(props.lat){
+        return [props.lat,props.lng]
+    }
 }
 
 function mapsFromCoords() { // opens new Google Maps location using coords.
-    const [lat, lon] = getUserCoordinates()
+    const [lat, lon] = coordinateClimber()
     if (!lat || !lon) {
         return;
     }
@@ -140,7 +144,7 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
 }
 
 function getGuessDistance(manual) {
-    const coords = getUserCoordinates()
+    const coords = coordinateClimber()
     const clat = coords[0] * (Math.PI / 180)
     const clng = coords[1] * (Math.PI / 180)
     const y = document.getElementsByClassName("guess-map__canvas-container")[0]
