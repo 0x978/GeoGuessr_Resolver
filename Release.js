@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver Release
 // @namespace    http://tampermonkey.net/
-// @version      9.8.3
+// @version      10
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -27,7 +27,7 @@ async function getAddress(lat, lon) {
 }
 
 function displayLocationInfo() {
-    const coordinates = getUserCoordinates()
+    const coordinates = coordinateClimber()
     // api call with the lat lon to retrieve data.
     getAddress(coordinates[0], coordinates[1]).then(data => {
         alert(`
@@ -46,16 +46,21 @@ function displayLocationInfo() {
 }
 
 function placeMarker(safeMode, skipGet, coords) {
-
-    let [lat, lng] = skipGet ? coords : getUserCoordinates()
-    if (document.getElementsByClassName("guess-map__canvas-container")[0] === undefined) { // if this is not defined, the user must be in a streaks game, streaks mode uses a different map and therefore is calculated in a different function
-        placeMarkerStreaksMode([lat, lng])
+    const isStreaks = document.getElementsByClassName("guess-map__canvas-container")[0] === undefined
+    let location = skipGet ? coords : coordinateClimber(isStreaks)
+    if (isStreaks) {
+        placeMarkerStreaksMode(location)
         return;
     }
+    let [lat, lng] = location
 
     if (safeMode) {
-        lat += (Math.random() / 2);
-        lng += (Math.random() / 2);
+        const sway = [Math.random() > 0.5,Math.random() > 0.5]
+        const multiplier = Math.random() * 4
+        const horizontalAmount = Math.random() * multiplier
+        const verticalAmount = Math.random() * multiplier
+        sway[0] ? lat += verticalAmount : lat -= verticalAmount
+        sway[1] ? lng += horizontalAmount : lat -= horizontalAmount
     }
 
     const element = document.getElementsByClassName("guess-map__canvas-container")[0] // html element containing needed props.
@@ -70,52 +75,72 @@ function placeMarker(safeMode, skipGet, coords) {
     injectOverride()
 }
 
-function placeMarkerStreaksMode([lat, lng]) {
-
+function placeMarkerStreaksMode(code) {
     let element = document.getElementsByClassName("region-map_map__5e4h8")[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
     if(!element){
-       element = document.getElementsByClassName("region-map_map__7jxcD")[0]
+        element = document.getElementsByClassName("region-map_map__7jxcD")[0]
     }
     const keys = Object.keys(element)
     const reactKey = keys.find(key => key.startsWith("__reactFiber$"))
     const placeMarkerFunction = element[reactKey].return.memoizedProps.onRegionSelected // This map works by selecting regions, not exact coordinates on a map, which is handles by the "onRegionSelected" function.
 
-    // the onRegionSelected method of the streaks map doesn't accept an object containing coordinates like the other game-modes.
-    // Instead, it accepts the country's 2-digit IBAN country code.
-    // For now, I will pass the location coordinates into an API to retrieve the correct Country code, but I believe I can find a way without the API in the future.
-    // TODO: find a method without using an API since the API is never guaranteed.
-
-    getAddress(lat, lng).then(data => { // using API to retrieve the country code at the current coordinates.
-        const countryCode = data.address.country_code
-        placeMarkerFunction(countryCode) // passing the country code into the onRegionSelected method.
-    })
-
-}
-
-// detects game mode and return appropriate coordinates.
-function getUserCoordinates() {
-    let x = document.querySelector('div[data-qa="panorama"]');
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    const found =  props.return.memoizedProps
-    return [found.lat,found.lng]
-}
-
-function backupGetUserCoordinates(){
-    const x = document.querySelectorAll('[class^="game-panorama_panorama__"]')[0]
-    if(x === undefined){
-        return backupGetUserCoordinates()
+    if(typeof code !== "string"){
+        let [lat,lng] = code
+        getAddress(lat, lng).then(data => { // using API to retrieve the country code at the current coordinates.
+            const countryCode = data.address.country_code
+            placeMarkerFunction(countryCode) // passing the country code into the onRegionSelected method.
+        })
+        return
     }
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    const found = props.return.memoizedProps.panoramaRef.current.location.latLng
-    return ([found.lat(), found.lng()]) // lat and lng are functions returning the lat/lng values
+
+    placeMarkerFunction(code)
+
+}
+
+function coordinateClimber(isStreaks){
+    let timeout = 10
+    let path = document.querySelector('div[data-qa="panorama"]');
+    while (timeout > 0){
+        const props = path[Object.keys(path).find(key => key.startsWith("__reactFiber$"))]
+        const checkReturns = iterateReturns(props,isStreaks)
+        if(checkReturns){
+            return checkReturns
+        }
+        path = path.parentNode
+        timeout--
+    }
+    alert("Failed to find co-ordinates. Please make an issue on GitHub or GreasyFork. " +
+        "Please make sure you mention the game mode in your report.")
+}
+
+function iterateReturns(element,isStreaks){
+    let timeout = 10
+    let path = element
+    while(timeout > 0){
+        const coords = checkProps(path.memoizedProps,isStreaks)
+        if(coords){
+            return coords
+        }
+        path = element.return
+        timeout--
+    }
+}
+
+function checkProps(props,isStreaks){
+    if(props?.panoramaRef){
+        const found = props.panoramaRef.current.location.latLng
+        return [found.lat(),found.lng()]
+    }
+    if(props.streakLocationCode && isStreaks){
+        return props.streakLocationCode
+    }
+    if(props.lat){
+        return [props.lat,props.lng]
+    }
 }
 
 function mapsFromCoords() { // opens new Google Maps location using coords.
-    const [lat, lon] = getUserCoordinates()
+    const [lat, lon] = coordinateClimber()
     if (!lat || !lon) {
         return;
     }
@@ -123,7 +148,7 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
 }
 
 function getGuessDistance(manual) {
-    const coords = getUserCoordinates()
+    const coords = coordinateClimber()
     const clat = coords[0] * (Math.PI / 180)
     const clng = coords[1] * (Math.PI / 180)
     const y = document.getElementsByClassName("guess-map__canvas-container")[0]
@@ -147,15 +172,12 @@ function displayDistanceFromCorrect(manual) {
     if (distance === null) {
         return
     }
-    // let enemy = fetchEnemyDistance(true) patched
-    // const BR = getBRGuesses() patched
     let text = `${distance} km (${Math.round(distance * 0.621371)} miles)`
     setGuessButtonText(text)
-    //alert(`Your marker is ${distance} km (${Math.round(distance * 0.621371)} miles) away from the correct guess`)
 }
 
 function setGuessButtonText(text) {
-    let x = document.getElementsByClassName("button_button__aR6_e button_variantPrimary__u3WzI")[0]
+    let x = document.querySelector('button[data-qa="perform-guess"]');
     if(!x){
         return null}
     x.innerText = text
