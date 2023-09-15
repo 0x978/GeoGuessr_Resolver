@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Geoguessr Resolver (BETA)
+// @name         Geoguessr Resolver Beta
 // @namespace    http://tampermonkey.net/
-// @version      10.0b7
+// @version      11b01
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -27,7 +27,7 @@ async function getAddress(lat, lon) {
 }
 
 function displayLocationInfo() {
-    const coordinates = getUserCoordinates()
+    const coordinates = coordinateClimber()
     // api call with the lat lon to retrieve data.
     getAddress(coordinates[0], coordinates[1]).then(data => {
         alert(`
@@ -46,21 +46,21 @@ function displayLocationInfo() {
 }
 
 function placeMarker(safeMode, skipGet, coords) {
-
-    let [lat, lng] = skipGet ? coords : getUserCoordinates()
-    if (document.getElementsByClassName("guess-map__canvas-container")[0] === undefined) { // if this is not defined, the user must be in a streaks game, streaks mode uses a different map and therefore is calculated in a different function
-        if(document.getElementsByClassName("region-map_map__7jxcD")[0]){
-            placeMarkerStreaksMode([lat, lng])
-        }
-        else{
-            panicPlaceCoords()
-        }
+    const isStreaks = document.getElementsByClassName("guess-map__canvas-container")[0] === undefined
+    let location = skipGet ? coords : coordinateClimber(isStreaks)
+    if (isStreaks) {
+        placeMarkerStreaksMode(location)
         return;
     }
+    let [lat, lng] = location
 
     if (safeMode) {
-        lat += (Math.random() / 2);
-        lng += (Math.random() / 2);
+        const sway = [Math.random() > 0.5,Math.random() > 0.5]
+        const multiplier = Math.random() * 4
+        const horizontalAmount = Math.random() * multiplier
+        const verticalAmount = Math.random() * multiplier
+        sway[0] ? lat += verticalAmount : lat -= verticalAmount
+        sway[1] ? lng += horizontalAmount : lat -= horizontalAmount
     }
 
     const element = document.getElementsByClassName("guess-map__canvas-container")[0] // html element containing needed props.
@@ -75,8 +75,7 @@ function placeMarker(safeMode, skipGet, coords) {
     injectOverride()
 }
 
-function placeMarkerStreaksMode([lat, lng]) {
-
+function placeMarkerStreaksMode(code) {
     let element = document.getElementsByClassName("region-map_map__5e4h8")[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
     if(!element){
         element = document.getElementsByClassName("region-map_map__7jxcD")[0]
@@ -85,18 +84,19 @@ function placeMarkerStreaksMode([lat, lng]) {
     const reactKey = keys.find(key => key.startsWith("__reactFiber$"))
     const placeMarkerFunction = element[reactKey].return.memoizedProps.onRegionSelected // This map works by selecting regions, not exact coordinates on a map, which is handles by the "onRegionSelected" function.
 
-    // the onRegionSelected method of the streaks map doesn't accept an object containing coordinates like the other game-modes.
-    // Instead, it accepts the country's 2-digit IBAN country code.
-    // For now, I will pass the location coordinates into an API to retrieve the correct Country code, but I believe I can find a way without the API in the future.
-    // TODO: find a method without using an API since the API is never guaranteed.
+    if(typeof code !== "string"){
+        let [lat,lng] = code
+        getAddress(lat, lng).then(data => { // using API to retrieve the country code at the current coordinates.
+            const countryCode = data.address.country_code
+            placeMarkerFunction(countryCode) // passing the country code into the onRegionSelected method.
+        })
+        return
+    }
 
-    getAddress(lat, lng).then(data => { // using API to retrieve the country code at the current coordinates.
-        const countryCode = data.address.country_code
-        placeMarkerFunction(countryCode) // passing the country code into the onRegionSelected method.
-    })
+    placeMarkerFunction(code)
 }
 
-function panicPlaceCoords(){ // I have no idea what Geoguessr did to hide the new place function so well, but I've figured it out.
+function panicPlaceMarker(){
     const x = document.getElementsByClassName("coordinate-map_canvasContainer__7d8Yw")[0]
     const keys = Object.keys(x)
     const key = keys.find(key => key.startsWith("__reactFiber$"))
@@ -106,171 +106,82 @@ function panicPlaceCoords(){ // I have no idea what Geoguessr did to hide the ne
     const dynamicIndex = Object.keys(clickProperty)[0]
     const clickFunction = clickProperty[dynamicIndex].xe
 
-    let coords = panicGetCoords()
+    let [lat,lng] = coordinateClimber()
+
+    lat += 0.1
+    lng += 0.1
+
+    let z = {
+        "latLng":{
+            "lat": () =>  37.828125,
+            "lng": () => -122.422844,
+        }
+    }
+
 
     let y = {
         "latLng": {
-            "lat": coords.lat,
-            "lng": coords.lng,
+            "lat": () => lat,
+            "lng": () =>  lng,
         }
     }
+    clickFunction(z)
+    clickFunction(z)
     clickFunction(y)
-    disableSubmit()
 }
 
-function panicGetCoords(){
-    const x = document.getElementsByClassName("styles_root__3xbKq")[0]
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    const found = props.return.memoizedProps.panorama.position
-    return found
-}
-
-const originalAddEventListener = document.addEventListener;
-document.addEventListener = function(type, listener, options) { // Removing key binds added by geoguessr which break my script.
-    if (type === 'keydown') {
-        let rgx = new RegExp("Z\\.powerUps\\.find")
-        if(rgx.test(listener.toString())){
-            return;
+function coordinateClimber(isStreaks){
+    let timeout = 10
+    let path = document.querySelector('div[data-qa="panorama"]');
+    while (timeout > 0){
+        const props = path[Object.keys(path).find(key => key.startsWith("__reactFiber$"))]
+        const checkReturns = iterateReturns(props,isStreaks)
+        if(checkReturns){
+            return checkReturns
         }
+        path = path.parentNode
+        timeout--
     }
-    originalAddEventListener(type, listener, options);
-};
+    alert("Failed to find co-ordinates. Please make an issue on GitHub or GreasyFork. " +
+        "Please make sure you mention the game mode in your report.")
+}
 
-
-function disableSubmit(){
-    function space(e) {
-        if (e.keyCode === 32) {
-            e.stopImmediatePropagation();
-            alert("Move the marker before trying to guess. This alert has prevented your browser from crashing");
+function iterateReturns(element,isStreaks){
+    let timeout = 10
+    let path = element
+    while(timeout > 0){
+        const coords = checkProps(path.memoizedProps,isStreaks)
+        if(coords){
+            return coords
         }
+        path = element.return
+        timeout--
     }
-    document.addEventListener("keyup", space);
-
-    setTimeout(() => {
-        document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0].innerText = ">>> Move Marker To Prevent Crash <<<"
-        let old = document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick
-        document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = () => {
-            alert("Move the marker before trying to guess. This alert has prevented your browser from crashing")
-        }
-        const changedGuess = () =>{
-            document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0].innerText = "Crash Prevented :)"
-            document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0][Object.keys(document.getElementsByClassName("button_button__CnARx button_variantPrimary__xc8Hp")[0])[1]].onClick = old
-            document.removeEventListener("click", changedGuess);
-            document.removeEventListener("keyup", space); // TODO not working
-        }
-
-        document.getElementsByClassName("coordinate-map_canvas__Ksics")[0].addEventListener("click",changedGuess)
-    },500)
 }
-// detects game mode and return appropriate coordinates.
-function getUserCoordinates() {
-    const x = document.querySelectorAll('[class^="game-panorama_panorama__"]')[0]
-    if(x === undefined){
-        if(document.getElementsByClassName("game-layout__panorama-canvas")[0]){
-            return backupGetUserCoordinates()
-        }
-        else{
-            let y = document.getElementsByClassName("gm-style")[0].parentNode.parentNode
-            const keys = Object.keys(y)
-            const key = keys.find(key => key.startsWith("__reactFiber$"))
-            const props = y[key]
-            const found = props.return.memoizedProps
-            return [found.lat,found.lng]
-        }
 
+function checkProps(props,isStreaks){
+    if(props?.panoramaRef){
+        const found = props.panoramaRef.current.location.latLng
+        return [found.lat(),found.lng()]
     }
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    const found = props.return.memoizedProps.panoramaRef.current.location.latLng
-    return ([found.lat(), found.lng()]) // lat and lng are functions returning the lat/lng values
+    if(props.streakLocationCode && isStreaks){
+        return props.streakLocationCode
+    }
+    if(props.lat){
+        return [props.lat,props.lng]
+    }
 }
-
-function backupGetUserCoordinates(){
-    let x = document.querySelector('div[data-qa="panorama"]');
-    const keys = Object.keys(x)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
-    const found =  props.return.memoizedProps
-    return [found.lat,found.lng]
-}
-
 
 function mapsFromCoords() { // opens new Google Maps location using coords.
-    const [lat, lon] = getUserCoordinates()
+    const [lat, lon] = coordinateClimber()
     if (!lat || !lon) {
         return;
     }
     window.open(`https://www.google.com/maps/place/${lat},${lon}`);
 }
 
-// function matchEnemyGuess(){ broken due to geoguessr AC
-//     const enemyGuess = getEnemyGuess()
-//     console.log(enemyGuess)
-//     let eLat = enemyGuess.lat
-//     let eLng = enemyGuess.lng
-//     console.log(eLat,eLng)
-//     placeMarker(false,true,[eLat,eLng])
-// }
-
-// Broken due to geoguessr fixes
-// function fetchEnemyDistance() { // OUTPUT WILL NEED TO BE ROUNDED IF TO BE DISPLAYED
-//     const guessDistance = getEnemyGuess()
-//     if (guessDistance === null) {
-//         return;
-//     }
-//     const km = guessDistance / 1000
-//     const miles = km * 0.621371
-//     return [km, miles]
-// }
-//
-// function getEnemyGuess() {
-//     const x = document.getElementsByClassName("game_layout__TO_jf")[0]
-//     if (!x) {
-//         return null
-//     }
-//     const keys = Object.keys(x)
-//     const key = keys.find(key => key.startsWith("__reactFiber$"))
-//     const props = x[key]
-//     const teamArr = props.return.memoizedProps.gameState.teams
-//     const enemyTeam = findEnemyTeam(teamArr, findID())
-//     const enemyGuesses = enemyTeam.players[0].guesses
-//     const recentGuess = enemyGuesses[enemyGuesses.length - 1]
-//
-//     if (!isRoundValid(props.return.memoizedProps.gameState, enemyGuesses)) {
-//         return null;
-//     }
-//     return recentGuess.distance
-// }
-
-function findID() {
-    const y = document.getElementsByClassName("user-nick_root__DUfvc")[0]
-    const keys = Object.keys(y)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = y[key]
-    const id = props.return.memoizedProps.userId
-    return id
-}
-
-function findEnemyTeam(teams, userID) {
-    const player0 = teams[0].players[0].playerId
-    if (player0 !== userID) {
-        return teams[0]
-    } else {
-        return teams[1]
-    }
-}
-
-function isRoundValid(gameState, guesses) { // returns true if the given guess occurred in the current round.
-    const currentRound = gameState.currentRoundNumber
-    const numOfUserGuesses = guesses ? guesses.length : 0;
-    return currentRound === numOfUserGuesses
-}
-
 function getGuessDistance(manual) {
-    const coords = getUserCoordinates()
+    const coords = coordinateClimber()
     const clat = coords[0] * (Math.PI / 180)
     const clng = coords[1] * (Math.PI / 180)
     const y = document.getElementsByClassName("guess-map__canvas-container")[0]
@@ -294,16 +205,13 @@ function displayDistanceFromCorrect(manual) {
     if (distance === null) {
         return
     }
-    // let enemy = fetchEnemyDistance(true) patched
-    // const BR = getBRGuesses() patched
     let text = `${distance} km (${Math.round(distance * 0.621371)} miles)`
     setGuessButtonText(text)
 }
 
 function setGuessButtonText(text) {
-    let x = document.getElementsByClassName("button_button__aR6_e button_variantPrimary__u3WzI")[0]
+    let x = document.querySelector('button[data-qa="perform-guess"]');
     if(!x){
-        console.log("ERROR: Failed to calculate distance, unable to locate button.")
         return null}
     x.innerText = text
 }
@@ -372,6 +280,13 @@ function getBRGuesses() {
     return Math.round(bestGuessDistance / 1000)
 }
 
+function getReactProps(element){
+    let x = document.getElementsByClassName(element)[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
+    const keys = Object.keys(x)
+    const reactKey = keys.find(key => key.startsWith("__reactFiber$"))
+    return x[reactKey]
+}
+
 function displayBRGuesses(){
     const distance = getBRGuesses()
     if (distance === null) {
@@ -381,29 +296,13 @@ function displayBRGuesses(){
     alert(`The best guess this round is ${distance} km from the correct location. (Not including your guess)`)
 }
 
-// Useless after changes by geoguessr
-// function calculateScore(Udistance,eDistance){
-//     let userScore = Math.round(5000*Math.exp((-10*Udistance/14916.862))) // Thank you to this reddit comment for laying out the math so beautifully after I failed to do so myself: https://www.reddit.com/r/geoguessr/comments/zqwgnr/how_the_hell_does_this_game_calculate_damage/j12rjkq/?context=3
-//     let enemyScore = Math.round(5000*Math.exp((-10*eDistance/14916.862)))
-//     let damage = (userScore - enemyScore) * getMultiplier()
-//     //console.log("distances:",Udistance, eDistance, "||", "scores:", userScore, enemyScore, "x:",getMultiplier(), "Damage:",damage)
-//     return damage
-// }
-
-// function getMultiplier(){
-//     let obj = document.getElementsByClassName("round-icon_container__bNbtn")[0]
-//     if(!obj){return 1}
-//     let prop = obj[Object?.keys(document.getElementsByClassName("round-icon_container__bNbtn")[0])[0]]?.return?.memoizedProps
-//     return prop?.multiplier ?? 1
-// }
-
 function setInnerText(){
     const text = `
                 Geoguessr Resolver Loaded Successfully
-                
-                This is the beta versionm things will be broken.
 
                 IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION: https://text.0x978.com/geoGuessr
+
+                 Please read the above update to GeoGuessr anticheat
                 `
     if(document.getElementsByClassName("header_logo__vV0HK")[0]){
         document.getElementsByClassName("header_logo__vV0HK")[0].innerText = text
@@ -431,10 +330,7 @@ let onKeyDown = (e) => {
         displayBRGuesses()
     }
 }
-
 setInnerText()
 document.addEventListener("keydown", onKeyDown);
 let flag = false
-
-
 
