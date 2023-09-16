@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Geoguessr Resolver Release
+// @name         Geoguessr Resolver Hack
 // @namespace    http://tampermonkey.net/
-// @version      10
+// @version      10.1_Beta
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -46,6 +46,8 @@ function displayLocationInfo() {
 }
 
 function placeMarker(safeMode, skipGet, coords) {
+    const isPanic = document.getElementsByClassName("coordinate-map_canvasContainer__7d8Yw")[0]
+    if(isPanic){panicPlaceMarker(isPanic); return;}
     const isStreaks = document.getElementsByClassName("guess-map__canvas-container")[0] === undefined
     let location = skipGet ? coords : coordinateClimber(isStreaks)
     if (isStreaks) {
@@ -94,7 +96,39 @@ function placeMarkerStreaksMode(code) {
     }
 
     placeMarkerFunction(code)
+}
 
+function panicPlaceMarker(element){ // Currently only used in map runner.
+    const keys = Object.keys(element)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = element[key]
+
+    const clickProperty = props.return.memoizedProps.map.__e3_.click // taking the maps click property directly.
+    const clickFunction = clickProperty[getDynamicIndex(Object.keys(clickProperty),clickProperty)].xe
+    console.log(clickFunction)
+    let [lat,lng] = coordinateClimber()
+
+    // for some reason, submitting near-perfect guesses causes Chromium browsers to crash, the following will offset it to avoid this.
+    // There is probably some other way to avoid this, but I have no idea why this happens. See GitHub issue.
+    lat += 0.1
+    lng += 0.1
+
+    let y = {
+        "latLng": {
+            "lat": () => lat,
+            "lng": () =>  lng,
+        }
+    }
+    clickFunction(y)
+}
+
+function getDynamicIndex(indexArray,clickProperty){
+    for(let i = 0; i < indexArray.length;i++){
+        if(clickProperty[indexArray[i]]?.xe.toString().slice(0,20) === "l=>{let e={lat:l.lat"){
+            return indexArray[i]
+        }
+    }
+    alert("Maprunner Placer failed. \n Please report this on GitHub or Greasyfork.")
 }
 
 function coordinateClimber(isStreaks){
@@ -261,8 +295,9 @@ function setInnerText(){
                 Geoguessr Resolver Loaded Successfully
 
                 IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION: https://text.0x978.com/geoGuessr
-
-                 Please read the above update to GeoGuessr anticheat
+                 
+                 MAPRUNNER IS NOW SUPPORTED (BETA). Please try it out and report issues on GitHub
+                 Please note the MapRunner guesser is not 100% accurate, and usually scores around 4800 to 4900 points
                 `
     if(document.getElementsByClassName("header_logo__vV0HK")[0]){
         document.getElementsByClassName("header_logo__vV0HK")[0].innerText = text
@@ -275,22 +310,26 @@ GM_webRequest([
 
 let onKeyDown = (e) => {
     if (e.keyCode === 49) {
+        e.stopImmediatePropagation(); // tries to prevent the key from being hijacked by geoguessr
         placeMarker(true, false, undefined)
     }
     if (e.keyCode === 50) {
+        e.stopImmediatePropagation();
         placeMarker(false, false, undefined)
     }
     if (e.keyCode === 51) {
+        e.stopImmediatePropagation();
         displayLocationInfo()
     }
     if (e.keyCode === 52) {
+        e.stopImmediatePropagation();
         mapsFromCoords()
     }
     if (e.keyCode === 53) {
+        e.stopImmediatePropagation();
         displayBRGuesses()
     }
 }
 setInnerText()
 document.addEventListener("keydown", onKeyDown);
 let flag = false
-
