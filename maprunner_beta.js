@@ -104,9 +104,8 @@ function panicPlaceMarker(element){ // Currently only used in map runner.
     const props = element[key]
 
     const clickProperty = props.return.memoizedProps.map.__e3_.click // taking the maps click property directly.
-    const dynamicIndex = Object.keys(clickProperty)[0]
-    const clickFunction = clickProperty[dynamicIndex].xe
-
+    const clickFunction = clickProperty[getDynamicIndex(Object.keys(clickProperty),clickProperty)].xe
+    console.log(clickFunction)
     let [lat,lng] = coordinateClimber()
 
     // for some reason, submitting near-perfect guesses causes Chromium browsers to crash, the following will offset it to avoid this.
@@ -122,7 +121,17 @@ function panicPlaceMarker(element){ // Currently only used in map runner.
     }
     clickFunction(y)
 }
-    function coordinateClimber(isStreaks){
+
+function getDynamicIndex(indexArray,clickProperty){
+    for(let i = 0; i < indexArray.length;i++){
+        if(clickProperty[indexArray[i]]?.xe.toString().slice(0,20) === "l=>{let e={lat:l.lat"){
+            return indexArray[i]
+        }
+    }
+    alert("Maprunner Placer failed. \n Please report this on GitHub or Greasyfork.")
+}
+
+function coordinateClimber(isStreaks){
     let timeout = 10
     let path = document.querySelector('div[data-qa="panorama"]');
     while (timeout > 0){
