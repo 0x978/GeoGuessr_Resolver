@@ -46,6 +46,8 @@ function displayLocationInfo() {
 }
 
 function placeMarker(safeMode, skipGet, coords) {
+    const isPanic = document.getElementsByClassName("coordinate-map_canvasContainer__7d8Yw")[0]
+    if(isPanic){panicPlaceMarker(isPanic); return;}
     const isStreaks = document.getElementsByClassName("guess-map__canvas-container")[0] === undefined
     let location = skipGet ? coords : coordinateClimber(isStreaks)
     if (isStreaks) {
@@ -96,28 +98,21 @@ function placeMarkerStreaksMode(code) {
     placeMarkerFunction(code)
 }
 
-function panicPlaceMarker(){
-    const x = document.getElementsByClassName("coordinate-map_canvasContainer__7d8Yw")[0]
-    const keys = Object.keys(x)
+function panicPlaceMarker(element){ // Currently only used in map runner.
+    const keys = Object.keys(element)
     const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = x[key]
+    const props = element[key]
 
-    const clickProperty = props.return.memoizedProps.map.__e3_.click
+    const clickProperty = props.return.memoizedProps.map.__e3_.click // taking the maps click property directly.
     const dynamicIndex = Object.keys(clickProperty)[0]
     const clickFunction = clickProperty[dynamicIndex].xe
 
     let [lat,lng] = coordinateClimber()
 
+    // for some reason, submitting near-perfect guesses causes Chromium browsers to crash, the following will offset it to avoid this.
+    // There is probably some other way to avoid this, but I have no idea why this happens. See GitHub issue.
     lat += 0.1
     lng += 0.1
-
-    let z = {
-        "latLng":{
-            "lat": () =>  37.828125,
-            "lng": () => -122.422844,
-        }
-    }
-
 
     let y = {
         "latLng": {
@@ -125,12 +120,9 @@ function panicPlaceMarker(){
             "lng": () =>  lng,
         }
     }
-    clickFunction(z)
-    clickFunction(z)
     clickFunction(y)
 }
-
-function coordinateClimber(isStreaks){
+    function coordinateClimber(isStreaks){
     let timeout = 10
     let path = document.querySelector('div[data-qa="panorama"]');
     while (timeout > 0){
