@@ -272,13 +272,6 @@ function getBRGuesses() {
     return Math.round(bestGuessDistance / 1000)
 }
 
-function getReactProps(element){
-    let x = document.getElementsByClassName(element)[0] // this map is unique to streaks mode, however, is similar to that found in normal modes.
-    const keys = Object.keys(x)
-    const reactKey = keys.find(key => key.startsWith("__reactFiber$"))
-    return x[reactKey]
-}
-
 function displayBRGuesses(){
     const distance = getBRGuesses()
     if (distance === null) {
@@ -307,22 +300,26 @@ GM_webRequest([
 
 let onKeyDown = (e) => {
     if (e.keyCode === 49) {
+        e.stopImmediatePropagation(); // tries to prevent the key from being hijacked by geoguessr
         placeMarker(true, false, undefined)
     }
     if (e.keyCode === 50) {
+        e.stopImmediatePropagation();
         placeMarker(false, false, undefined)
     }
     if (e.keyCode === 51) {
+        e.stopImmediatePropagation();
         displayLocationInfo()
     }
     if (e.keyCode === 52) {
+        e.stopImmediatePropagation();
         mapsFromCoords()
     }
     if (e.keyCode === 53) {
+        e.stopImmediatePropagation();
         displayBRGuesses()
     }
 }
 setInnerText()
 document.addEventListener("keydown", onKeyDown);
 let flag = false
-
