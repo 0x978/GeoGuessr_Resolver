@@ -257,24 +257,27 @@ function injectOverride() {
     })
 }
 
-function getBRGuesses() {
-    let gameRoot = document.getElementsByClassName("game_root__2vV1H")[0]
-    if(!gameRoot){
-        return null
-    }
-    let keys = gameRoot[Object.keys(document.getElementsByClassName("game_root__2vV1H")[0])[0]]
-    let gameState = keys.return.memoizedProps.gameState
-    let players = gameState.players
+function getBRCoordinateGuesses() {
+    const gameRoot = document.getElementsByClassName("game_root__2vV1H")[0]
+    const props = gameRoot[Object.keys(document.getElementsByClassName("game_root__2vV1H")[0])[0]]
+    const gameProps = props.return.return.memoizedProps.value.gameState
+    const roundNumber = gameProps.currentRoundNumber
+    const playerArray = gameProps.players
+
     let bestGuessDistance = Number.MAX_SAFE_INTEGER
-    players.forEach(player => {
-        let currGuess = player.coordinateGuesses[player.coordinateGuesses.length - 1]
-        if(currGuess){
-            let currDistance = currGuess.distance
-            if ((currDistance < bestGuessDistance) && currGuess.roundNumber === gameState.currentRoundNumber && player.playerId !== gameRoot.return.memoizedProps.currentPlayer.playerId) {
-                bestGuessDistance = currDistance
+
+    playerArray.forEach((player) => {
+        const guesses = player.coordinateGuesses
+        if(guesses){
+            const guess = guesses[guesses.length - 1]
+            if(guess && guess.roundNumber === roundNumber){
+                if(guess.distance < bestGuessDistance){
+                    bestGuessDistance = guess.distance
+                }
             }
         }
     })
+
     if (bestGuessDistance === Number.MAX_SAFE_INTEGER) {
         return null;
     }
@@ -282,12 +285,12 @@ function getBRGuesses() {
 }
 
 function displayBRGuesses(){
-    const distance = getBRGuesses()
+    const distance = getBRCoordinateGuesses()
     if (distance === null) {
         alert("There have been no guesses this round")
         return;
     }
-    alert(`The best guess this round is ${distance} km from the correct location. (Not including your guess)`)
+    alert(`The best guess this round is ${distance} km from the correct location. (This may include your guess)`)
 }
 
 function setInnerText(){
