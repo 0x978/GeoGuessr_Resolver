@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Geoguessr Resolver Hack
+// @name         Geoguessr Resolver Hack (Works in all game modes)
 // @namespace    http://tampermonkey.net/
-// @version      10.1_Beta
+// @version      10.3_Beta
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -297,10 +297,12 @@ function setInnerText(){
     const text = `
                 Geoguessr Resolver Loaded Successfully
 
-                IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION: https://text.0x978.com/geoGuessr
-                 
+                IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION (I predicted it lol): 
+                
+                Geoguessr Duels now has a replay mode. Try to look legit. Use the google map option more.
+                https://www.reddit.com/r/geoguessr/comments/16oganx/exciting_update_duel_replays_now_available_in/
+                
                  MAPRUNNER IS NOW SUPPORTED (BETA). Please try it out and report issues on GitHub
-                 Please note the MapRunner guesser is not 100% accurate, and usually scores around 4800 to 4900 points
                 `
     if(document.getElementsByClassName("header_logo__vV0HK")[0]){
         document.getElementsByClassName("header_logo__vV0HK")[0].innerText = text
