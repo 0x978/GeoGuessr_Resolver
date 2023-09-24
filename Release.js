@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Resolver Hack (Works in all game modes)
 // @namespace    http://tampermonkey.net/
-// @version      10.3_Beta
+// @version      10.4_Beta
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps | See enemy guess Distance
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -151,11 +151,16 @@ function iterateReturns(element,isStreaks){
     let timeout = 10
     let path = element
     while(timeout > 0){
-        const coords = checkProps(path.memoizedProps,isStreaks)
-        if(coords){
-            return coords
+        if(path){
+            const coords = checkProps(path.memoizedProps,isStreaks)
+            if(coords){
+                return coords
+            }
         }
-        path = element.return
+        if(!path["return"]){
+            return
+        }
+        path = path["return"]
         timeout--
     }
 }
@@ -167,6 +172,10 @@ function checkProps(props,isStreaks){
     }
     if(props.streakLocationCode && isStreaks){
         return props.streakLocationCode
+    }
+    if(props.gameState){
+        const x = props.gameState[props.gameState.rounds.length-1]
+        return [x.lat,x.lng]
     }
     if(props.lat){
         return [props.lat,props.lng]
