@@ -9,6 +9,9 @@
 // @grant        GM_webRequest
 // ==/UserScript==
 
+let loopCount = 1;
+let cancelXpFarm = false;
+
 window.alert = function (message) {
   // Devs tried to overwrite alert to detect script. I had already stopped using alert, but i'd rather they didn't override this anyway.
   nativeAlert(message);
@@ -140,6 +143,61 @@ function panicPlaceMarker(element) {
     },
   };
   clickFunction(y);
+}
+
+function xpFarm() {
+  if (!cancelXpFarm && loopCount <= 5) {
+    // Wait 10 seconds before guessing
+    const guessDelay = 10 * 1000; // 10 seconds in milliseconds
+    setTimeout(() => {
+      placeMarker(true);
+
+      // Wait for the guess to be placed (e.g., 3 seconds) before submitting
+      const submissionDelay = 7 * 1000; // 3 seconds in milliseconds
+      setTimeout(() => {
+        const divClass = "guess-map__guess-button";
+        const div = document.querySelector(`.${divClass}`);
+        if (div) {
+          const button = div.querySelector("button");
+          if (button) {
+            button.click();
+          } else {
+            alert("Button not found");
+          }
+        } else {
+          alert("Div not found");
+        }
+
+        // Wait for the round result to close, then start the next round after 3 seconds
+        const nextRoundDelay = 7 * 1000; // 3 seconds in milliseconds
+        setTimeout(() => {
+          const button = document.querySelector(
+            '[data-qa="close-round-result"]'
+          );
+          if (button) {
+            button.click();
+          } else {
+            alert("Button not found or not yet loaded.");
+          }
+
+          // After the round result closes, increment loopCount for the next round
+          loopCount++;
+        }, nextRoundDelay);
+      }, submissionDelay);
+    }, guessDelay); // Introduce the desired guess delay
+  } else if (loopCount >= 5) {
+    loopCount = 0;
+    // Generate a random time interval between 5 and 10 seconds to start a new game
+    const newGameTime = Math.random() * (10 - 5) + 5;
+    setTimeout(() => {
+      const button = document.querySelector('[data-qa="play-again-button"]');
+      if (button) {
+        button.click();
+      } else {
+        alert("Button not found or not yet loaded.");
+      }
+    }, newGameTime * 1000); // Convert to milliseconds
+  }
 }
 
 function getDynamicIndex(indexArray, clickProperty) {
@@ -410,28 +468,22 @@ let onKeyDown = (e) => {
     e.stopImmediatePropagation();
     displayBRGuesses();
   }
-  if (e.keycode === 54) {
-    e.stopImmediatePropagation();
-    if (loopCount < 5) {
-      const randomTime = Math.random() * (15 - 8) + 8;
-      setTimeout(() => {
-        placeMarker(true, false, undefined);
-        loopCount++;
-      }, randomTime * 1000); // Convert to milliseconds
+  if (e.keyCode === 54) {
+    // Keep running the script indefinitely with setInterval
+    const xpFarmInterval = setInterval(() => {
+      if (cancelXpFarm) clearInterval(xpFarmInterval);
+      xpFarm();
+    }, 10000);
+  }
+  if (e.keyCode === 55) {
+    if (!cancelXpFarm) {
+      alert("XP Farm Currently Not Running");
     } else {
-      loopCount = 0;
-
-      // Generate a random time interval between 5 and 10 seconds
-      const randomTime = Math.random() * (10 - 5) + 5;
-      setTimeout(() => {
-        // Simulate a space bar press
-        const spaceKeyEvent = new KeyboardEvent("keydown", { keyCode: 32 });
-        document.dispatchEvent(spaceKeyEvent);
-      }, randomTime * 1000); // Convert to milliseconds
+      alert("Terminating XP Farm");
+      cancelXpFarm = true;
     }
   }
 };
 setInnerText();
 document.addEventListener("keydown", onKeyDown);
 let flag = false;
-let loopCount = 0;
