@@ -9,8 +9,12 @@
 // @grant        GM_webRequest
 // ==/UserScript==
 
-let loopCount = 1;
 let cancelXpFarm = false;
+let firstGuess = true;
+
+let minGuessDelay = 1;
+let maxGuessDelay = 4;
+let guessDelay = (Math.random() * (maxGuessDelay - minGuessDelay) + minGuessDelay) * 1000; // Convert to milliseconds
 
 window.alert = function (message) { // Devs tried to overwrite alert to detect script. I had already stopped using alert, but i'd rather they didn't override this anyway.
     nativeAlert(message)
@@ -213,59 +217,30 @@ function getGuessDistance(manual) {
 }
 
 function xpFarm() {
-    if (!cancelXpFarm && loopCount <= 5) {
-      // Wait 10 seconds before guessing
-      const guessDelay = 10 * 1000; // 10 seconds in milliseconds
-      setTimeout(() => {
-        placeMarker(true);
-  
-        // Wait for the guess to be placed (e.g., 3 seconds) before submitting
-        const submissionDelay = 7 * 1000; // 3 seconds in milliseconds
+    if (!cancelXpFarm) {
+        // Wait for the round result to close
+        const nextRoundDelay = 2 * 1000; // 2 seconds in milliseconds
         setTimeout(() => {
-          const divClass = "guess-map__guess-button";
-          const div = document.querySelector(`.${divClass}`);
-          if (div) {
-            const button = div.querySelector("button");
-            if (button) {
-              button.click();
-            } else {
-              alert("Button not found");
+            setTimeout(() => {
+                const button = document.querySelector('[data-qa="close-round-result"]');
+                if (button) {
+                    firstGuess = true;
+                    button.click();
+                    guessDelay = (Math.random() * (maxGuessDelay - minGuessDelay) + minGuessDelay) * 1000; // Convert to milliseconds
+                }
+                const playAgainButton = document.querySelector('[data-qa="play-again-button"]');
+                if (playAgainButton) {
+                    playAgainButton.click();
+                }
+            }, nextRoundDelay);
+            // Make your guess
+            if (firstGuess) {
+                placeMarker(true);
+                firstGuess = false;
             }
-          } else {
-            alert("Div not found");
-          }
-  
-          // Wait for the round result to close, then start the next round after 3 seconds
-          const nextRoundDelay = 7 * 1000; // 3 seconds in milliseconds
-          setTimeout(() => {
-            const button = document.querySelector(
-              '[data-qa="close-round-result"]'
-            );
-            if (button) {
-              button.click();
-            } else {
-              alert("Button not found or not yet loaded.");
-            }
-  
-            // After the round result closes, increment loopCount for the next round
-            loopCount++;
-          }, nextRoundDelay);
-        }, submissionDelay);
-      }, guessDelay); // Introduce the desired guess delay
-    } else if (loopCount >= 5) {
-      loopCount = 0;
-      // Generate a random time interval between 5 and 10 seconds to start a new game
-      const newGameTime = Math.random() * (10 - 5) + 5;
-      setTimeout(() => {
-        const button = document.querySelector('[data-qa="play-again-button"]');
-        if (button) {
-          button.click();
-        } else {
-          alert("Button not found or not yet loaded.");
-        }
-      }, newGameTime * 1000); // Convert to milliseconds
+        }, guessDelay);
     }
-  }
+}
 
 function displayDistanceFromCorrect(manual) {
     let unRoundedDistance = getGuessDistance(manual) // need unrounded distance for precise calculations later.
@@ -405,17 +380,17 @@ let onKeyDown = (e) => {
         e.stopImmediatePropagation();
         // Keep running the script indefinitely with setInterval
         const xpFarmInterval = setInterval(() => {
-          if (cancelXpFarm) clearInterval(xpFarmInterval);
-          xpFarm();
-        }, 10000);
+            if (cancelXpFarm) clearInterval(xpFarmInterval);
+            xpFarmFast();
+        }, 15000);
     }
     if (e.keyCode === 55) {
         e.stopImmediatePropagation();
         if (!cancelXpFarm) {
-          alert("XP Farm Currently Not Running");
+            alert("XP Farm Currently Not Running");
         } else {
-          alert("Terminating XP Farm");
-          cancelXpFarm = true;
+            alert("Terminating XP Farm");
+            cancelXpFarm = true;
         }
     }
 }
