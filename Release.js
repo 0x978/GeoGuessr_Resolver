@@ -11,10 +11,11 @@
 
 let cancelXpFarm = false;
 let firstGuess = true;
+const nextRoundDelay =  4 * 1000; // 4 seconds in milliseconds
 
-let minGuessDelay = 1;
-let maxGuessDelay = 4;
-let guessDelay = (Math.random() * (maxGuessDelay - minGuessDelay) + minGuessDelay) * 1000; // Convert to milliseconds
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 window.alert = function (message) { // Devs tried to overwrite alert to detect script. I had already stopped using alert, but i'd rather they didn't override this anyway.
     nativeAlert(message)
@@ -216,29 +217,51 @@ function getGuessDistance(manual) {
     return distance
 }
 
-function xpFarm() {
+async function xpFarm(roundTime) {
     if (!cancelXpFarm) {
-        // Wait for the round result to close
-        const nextRoundDelay = 2 * 1000; // 2 seconds in milliseconds
-        setTimeout(() => {
-            setTimeout(() => {
-                const button = document.querySelector('[data-qa="close-round-result"]');
-                if (button) {
-                    firstGuess = true;
-                    button.click();
-                    guessDelay = (Math.random() * (maxGuessDelay - minGuessDelay) + minGuessDelay) * 1000; // Convert to milliseconds
-                }
-                const playAgainButton = document.querySelector('[data-qa="play-again-button"]');
-                if (playAgainButton) {
-                    playAgainButton.click();
-                }
-            }, nextRoundDelay);
-            // Make your guess
-            if (firstGuess) {
-                placeMarker(true);
-                firstGuess = false;
-            }
-        }, guessDelay);
+        let minGuessDelay = parseInt(roundTime - 12);
+        let maxGuessDelay = parseInt(roundTime - 3);
+        let guessDelay = parseInt(Math.floor(Math.random() * (maxGuessDelay - minGuessDelay + 1) + minGuessDelay));
+        // await sleep(guessDelay * 1000);
+        if (firstGuess) {
+            placeMarker(true, false, undefined);
+            firstGuess = false;
+        }
+
+        // await sleep(nextRoundDelay);
+        const button = document.querySelector('[data-qa="close-round-result"]');
+        if (button) {
+            firstGuess = true;
+            button.click();
+            guessDelay = (Math.random() * (maxGuessDelay - minGuessDelay) + minGuessDelay) * 1000; // Convert to milliseconds
+        }
+        // play again button to start new game
+        const playAgainButton = document.querySelector('[data-qa="play-again-button"]');
+        if (playAgainButton) {
+            playAgainButton.click();
+        }
+
+        // setTimeout(() => {
+        //     setTimeout(() => {
+        //         // fetch button to start next round
+        //         const button = document.querySelector('[data-qa="close-round-result"]');
+        //         if (button) {
+        //             firstGuess = true;
+        //             button.click();
+        //             guessDelay = (Math.random() * (maxGuessDelay - minGuessDelay) + minGuessDelay) * 1000; // Convert to milliseconds
+        //         }
+        //         // play again button to start new game
+        //         const playAgainButton = document.querySelector('[data-qa="play-again-button"]');
+        //         if (playAgainButton) {
+        //             playAgainButton.click();
+        //         }
+        //     }, nextRoundDelay);
+        //     // Make your guess
+        //     if (firstGuess) {
+        //         placeMarker(true, false, undefined);
+        //         firstGuess = false;
+        //     }
+        // }, guessDelay * 1000);
     }
 }
 
@@ -378,11 +401,15 @@ let onKeyDown = (e) => {
     }
     if (e.keyCode === 54) {
         e.stopImmediatePropagation();
-        // Keep running the script indefinitely with setInterval
-        const xpFarmInterval = setInterval(() => {
-            if (cancelXpFarm) clearInterval(xpFarmInterval);
-            xpFarmFast();
-        }, 15000);
+        // let roundTime = parseInt(prompt("Enter length of round in seconds"))    
+        // setInterval(() => {
+        //     xpFarm(roundTime);
+        // }, 2000);
+        let roundTime = parseInt(prompt("Enter length of round in seconds"))
+        console.log(roundTime)
+        setInterval(() => {
+            xpFarm(roundTime);
+        }, roundTime * 1000);
     }
     if (e.keyCode === 55) {
         e.stopImmediatePropagation();
