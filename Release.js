@@ -217,51 +217,24 @@ function getGuessDistance(manual) {
     return distance
 }
 
-async function xpFarm(roundTime) {
+function xpFarm() {
     if (!cancelXpFarm) {
-        let minGuessDelay = parseInt(roundTime - 12);
-        let maxGuessDelay = parseInt(roundTime - 3);
-        let guessDelay = parseInt(Math.floor(Math.random() * (maxGuessDelay - minGuessDelay + 1) + minGuessDelay));
-        // await sleep(guessDelay * 1000);
         if (firstGuess) {
             placeMarker(true, false, undefined);
             firstGuess = false;
         }
 
-        // await sleep(nextRoundDelay);
         const button = document.querySelector('[data-qa="close-round-result"]');
         if (button) {
             firstGuess = true;
             button.click();
-            guessDelay = (Math.random() * (maxGuessDelay - minGuessDelay) + minGuessDelay) * 1000; // Convert to milliseconds
         }
+
         // play again button to start new game
         const playAgainButton = document.querySelector('[data-qa="play-again-button"]');
         if (playAgainButton) {
             playAgainButton.click();
         }
-
-        // setTimeout(() => {
-        //     setTimeout(() => {
-        //         // fetch button to start next round
-        //         const button = document.querySelector('[data-qa="close-round-result"]');
-        //         if (button) {
-        //             firstGuess = true;
-        //             button.click();
-        //             guessDelay = (Math.random() * (maxGuessDelay - minGuessDelay) + minGuessDelay) * 1000; // Convert to milliseconds
-        //         }
-        //         // play again button to start new game
-        //         const playAgainButton = document.querySelector('[data-qa="play-again-button"]');
-        //         if (playAgainButton) {
-        //             playAgainButton.click();
-        //         }
-        //     }, nextRoundDelay);
-        //     // Make your guess
-        //     if (firstGuess) {
-        //         placeMarker(true, false, undefined);
-        //         firstGuess = false;
-        //     }
-        // }, guessDelay * 1000);
     }
 }
 
@@ -401,15 +374,15 @@ let onKeyDown = (e) => {
     }
     if (e.keyCode === 54) {
         e.stopImmediatePropagation();
-        // let roundTime = parseInt(prompt("Enter length of round in seconds"))    
-        // setInterval(() => {
-        //     xpFarm(roundTime);
-        // }, 2000);
         let roundTime = parseInt(prompt("Enter length of round in seconds"))
-        console.log(roundTime)
+        let minGuessDelay = parseInt(roundTime - 12);
+        let maxGuessDelay = parseInt(roundTime - 3);
+        let guessDelay = parseInt(Math.floor(Math.random() * (maxGuessDelay - minGuessDelay + 1) + minGuessDelay));
         setInterval(() => {
-            xpFarm(roundTime);
-        }, roundTime * 1000);
+            xpFarm();
+            guessDelay = parseInt(Math.floor(Math.random() * (maxGuessDelay - minGuessDelay + 1) + minGuessDelay));
+            console.log(guessDelay);
+        }, guessDelay * 1000);
     }
     if (e.keyCode === 55) {
         e.stopImmediatePropagation();
