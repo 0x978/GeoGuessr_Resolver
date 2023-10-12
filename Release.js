@@ -48,7 +48,7 @@ function displayLocationInfo() {
 
 }
 
-function placeMarker(safeMode, skipGet, coords) {
+function placeMarker(safeMode, skipGet, coords, xpMode) {
     const isPanic = document.getElementsByClassName("coordinate-map_canvasContainer__7d8Yw")[0]
     if(isPanic){panicPlaceMarker(isPanic); return;}
     const isStreaks = document.getElementsByClassName("guess-map__canvas-container")[0] === undefined
@@ -61,7 +61,8 @@ function placeMarker(safeMode, skipGet, coords) {
 
     if (safeMode) {
         const sway = [Math.random() > 0.5,Math.random() > 0.5]
-        const multiplier = Math.random() * 4
+        const multiplier = xpMode ? Math.random() * 6 : Math.random() * 4
+        console.log(multiplier)
         const horizontalAmount = Math.random() * multiplier
         const verticalAmount = Math.random() * multiplier
         sway[0] ? lat += verticalAmount : lat -= verticalAmount
@@ -216,7 +217,7 @@ function xpFarm(guessDelay, buttonTime) {
     if (!cancelXpFarm) {
         setInterval(() => {
             if (firstGuess) {
-                placeMarker(true, false, undefined);
+                placeMarker(true, false, undefined, true);
                 firstGuess = false;
             }
     
@@ -353,11 +354,11 @@ GM_webRequest([
 let onKeyDown = (e) => {
     if (e.keyCode === 49) {
         e.stopImmediatePropagation(); // tries to prevent the key from being hijacked by geoguessr
-        placeMarker(true, false, undefined)
+        placeMarker(true, false, undefined, false)
     }
     if (e.keyCode === 50) {
         e.stopImmediatePropagation();
-        placeMarker(false, false, undefined)
+        placeMarker(false, false, undefined, false)
     }
     if (e.keyCode === 51) {
         e.stopImmediatePropagation();
