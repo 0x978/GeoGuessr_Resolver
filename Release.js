@@ -212,24 +212,28 @@ function getGuessDistance(manual) {
     return distance
 }
 
-function xpFarm() {
+function xpFarm(guessDelay, buttonTime) {
     if (!cancelXpFarm) {
-        if (firstGuess) {
-            placeMarker(true, false, undefined);
-            firstGuess = false;
-        }
-
-        const button = document.querySelector('[data-qa="close-round-result"]');
-        if (button) {
-            firstGuess = true;
-            button.click();
-        }
-
-        // play again button to start new game
-        const playAgainButton = document.querySelector('[data-qa="play-again-button"]');
-        if (playAgainButton) {
-            playAgainButton.click();
-        }
+        setInterval(() => {
+            if (firstGuess) {
+                placeMarker(true, false, undefined);
+                firstGuess = false;
+            }
+    
+            setInterval(() => {
+                const button = document.querySelector('[data-qa="close-round-result"]');
+                if (button) {
+                    firstGuess = true;
+                    button.click();
+                }
+                setInterval(() => {
+                    const playAgainButton = document.querySelector('[data-qa="play-again-button"]');
+                    if (playAgainButton) {
+                        playAgainButton.click();
+                    }
+                }, buttonTime * 1000)
+            }, buttonTime * 1000)
+        }, guessDelay * 1000);
     }
 }
 
@@ -373,11 +377,10 @@ let onKeyDown = (e) => {
         let minGuessDelay = parseInt(roundTime - 12);
         let maxGuessDelay = parseInt(roundTime - 3);
         let guessDelay = parseInt(Math.floor(Math.random() * (maxGuessDelay - minGuessDelay + 1) + minGuessDelay));
-        setInterval(() => {
-            xpFarm();
-            guessDelay = parseInt(Math.floor(Math.random() * (maxGuessDelay - minGuessDelay + 1) + minGuessDelay));
-            console.log(guessDelay);
-        }, guessDelay * 1000);
+        let buttonTime = parseInt(Math.floor(Math.random() * (4 - 2 + 1) + 2));
+        setTimeout(() => {
+            xpFarm(guessDelay, buttonTime);
+        }, 2000);
     }
     if (e.keyCode === 55) {
         e.stopImmediatePropagation();
