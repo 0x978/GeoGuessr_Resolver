@@ -11,11 +11,6 @@
 
 let cancelXpFarm = false;
 let firstGuess = true;
-const nextRoundDelay =  4 * 1000; // 4 seconds in milliseconds
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 window.alert = function (message) { // Devs tried to overwrite alert to detect script. I had already stopped using alert, but i'd rather they didn't override this anyway.
     nativeAlert(message)
