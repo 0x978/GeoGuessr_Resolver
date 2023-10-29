@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Geoguessr Location Resolver (Works in all except Streak modes)
+// @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      11.03
+// @version      11.1
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -22,13 +22,7 @@ let globalCoordinates = { // keep this stored globally, and we'll keep updating 
 }
 
 // ==================================== ANTI-ANTI-cheat stuff ====================================
-window.alert = function (message) { // Stop any attempt to overwrite alert, or fail silently and send no alert at all.
-    if(nativeAlert){
-        nativeAlert(message)
-    }
-};
-
-window.open = (...e) =>{
+window.open = (...e) =>{ // try to re-write window.open back to its native function.
     nativeOpen(...e)
 }
 
@@ -43,6 +37,7 @@ GM_webRequest([
 // Then I simply do some regex over the response string to find the coordinates, which Google gave to us in the response data
 // I then update a global variable above, with the correct coordinates, each time we receive a response from Google.
 // This needs further testing - but initial tests look promising
+
 var originalOpen = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function(method, url) {
     if (url.startsWith('https://maps.googleapis.com')) {
@@ -59,7 +54,6 @@ XMLHttpRequest.prototype.open = function(method, url) {
             globalCoordinates.lng = lng
         });
     }
-
     // Call the original open function
     return originalOpen.apply(this, arguments);
 };
@@ -69,7 +63,6 @@ XMLHttpRequest.prototype.open = function(method, url) {
 
 function placeMarker(safeMode){
     let {lat,lng} = globalCoordinates
-
 
     if (safeMode) { // applying random values to received coordinates.
         const sway = [Math.random() > 0.5,Math.random() > 0.5]
@@ -82,7 +75,11 @@ function placeMarker(safeMode){
 
     // Okay well played Geoguessr u got me there for a minute, but below should work.
     // Below is the only intentionally complicated part of the code - it won't be simplified or explained for good reason.
-    const element = document.getElementsByClassName("guess-map_canvas__cvpqv")[0]
+    let element = document.getElementsByClassName("guess-map_canvas__cvpqv")[0]
+    if(!element){
+        placeMarkerStreaks()
+        return
+    }
     const keys = Object.keys(element)
     const key = keys.find(key => key.startsWith("__reactFiber$"))
     const props = element[key]
@@ -98,6 +95,33 @@ function placeMarker(safeMode){
     x[y].xe(z)
 }
 
+// similar idea as above, but with special considerations for the streaks modes.
+// again - will not be explained.
+function placeMarkerStreaks(){
+    let {lat,lng} = globalCoordinates
+    let element = document.getElementsByClassName("region-map_mapCanvas__0dWlf")[0]
+    if(!element){
+        console.log("unable to find map element")
+        return
+    }
+    const keys = Object.keys(element)
+    const key = keys.find(key => key.startsWith("__reactFiber$"))
+    const props = element[key]
+    const x = props.return.return.memoizedProps.map.__e3_.click
+    const y = Object.keys(x)
+    const w = "e=>{m(e.latLng.lat(),e.latLng.lng())}"
+    const z = y.find(a => x[a].xe.toString() === w)
+
+    const v = {
+        latLng:{
+            lat: () => lat,
+            lng: () => lng,
+        }
+    }
+
+    x[z].xe(v)
+}
+
 // ====================================Open In Google Maps====================================
 
 function mapsFromCoords() { // opens new Google Maps location using coords.
@@ -108,7 +132,7 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
         return;
     }
 
-    // Reject any attempt to override window.open, or fail silently.
+    // Reject any attempt to call an overridden window.open, or fail .
     if(window.open.toString().indexOf('native code') === -1){
         console.log("Geoguessr has overridden window.open.")
         if(nativeOpen && nativeOpen.toString().indexOf('native code') !== -1){
@@ -130,8 +154,8 @@ function setInnerText(){
                 IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION:
                 
                 The script has been rewritten after a big update by the developers.
-                Using the marker place functions are at your risk during the initial testing of this update
-                Open in Google maps should be fine.
+                
+                Reminder that using the script is at your own risk - don't ruin other's fun.
                 `
     if(document.getElementsByClassName("header_logo__hQawV")[0]){
         const logoWrapper = document.getElementsByClassName("header_logo__hQawV")[0]
