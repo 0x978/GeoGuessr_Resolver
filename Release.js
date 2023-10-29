@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all except Streak modes)
 // @namespace    http://tampermonkey.net/
-// @version      11.02
+// @version      11.03
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -27,9 +27,15 @@ window.alert = function (message) { // Stop any attempt to overwrite alert, or f
         nativeAlert(message)
     }
 };
+
+window.open = (...e) =>{
+    nativeOpen(...e)
+}
+
 GM_webRequest([
     { selector: 'https://www.geoguessr.com/api/v4/trails', action: 'cancel' },
     { selector: 'https://www.geoguessr.com/api/v4/bdd406e4-c426-4d04-85b3-230f6fceef28', action: 'cancel' },
+    { selector: 'https://www.geoguessr.com/api/v4/b9bc4481-80c9-483a-a945-c24d935174f0', action: 'cancel' },
 ]);
 // ==================================== Coordinate Interception ====================================
 
@@ -95,12 +101,24 @@ function placeMarker(safeMode){
 // ====================================Open In Google Maps====================================
 
 function mapsFromCoords() { // opens new Google Maps location using coords.
+
     const {lat,lng} = globalCoordinates
     if (!lat || !lng) {
         console.log("Failed to fetch coords for Google Maps")
         return;
     }
-    window.open(`https://www.google.com/maps/place/${lat},${lng}`);
+
+    // Reject any attempt to override window.open, or fail silently.
+    if(window.open.toString().indexOf('native code') === -1){
+        console.log("Geoguessr has overridden window.open.")
+        if(nativeOpen && nativeOpen.toString().indexOf('native code') !== -1){
+            console.log("fallback enabled.")
+            nativeOpen(`https://www.google.com/maps/place/${lat},${lng}`);
+        }
+    }
+    else{
+        window.open(`https://www.google.com/maps/place/${lat},${lng}`)
+    }
 }
 
 // ====================================Controls,setup, etc.====================================
