@@ -17,9 +17,7 @@ After this, just simply add the code in Release.js as a new script.
 
 - Press '2' in game to place a pin on a location that will exactly score 5000 points. (pressing "guess" is required to guess)
 
-- Press '3' in game to see a brief description of the correct location.
-
-- Press '4' in game to open google maps set on the correct location in a new tab.
+- Press '3' in game to open Google Maps set on the correct location in a new tab.
 
 ## Credits:
 - https://nominatim.org - For providing an API to use to reverse lookup Latitude and Longitude coordinates.
@@ -28,7 +26,9 @@ After this, just simply add the code in Release.js as a new script.
 - https://stackoverflow.com/questions/2694640/find-an-element-in-dom-based-on-an-attribute-value - For showing me how to use the same HTML element to access required props, regardless of gamemode.
 
 # Disclaimer:
-This completely ruins the fun of the game, I made this to experiment with creating Tampermonkey scripts to modify website behaviour, please use at your own risk.
+This ***completely ruins the fun of the game***, I made this to experiment with creating Tampermonkey scripts to modify website behaviour and because it's fun to reverse engineer this stuff.
+
+<u>Please use at your own risk, and **don't ruin other's fun.** </u>
 
 ## Demonstration:
 <img src="https://cdn.upload.systems/uploads/Wg827y99.gif"/>
