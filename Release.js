@@ -106,7 +106,7 @@ function setInnerText(){
                 Open in Google maps should be fine.
                 `
     const logoWrapper = document.getElementsByClassName("header_logo__hQawV")[0]
-    logoWrapper.innerHTML = text
+    logoWrapper.innerText = text
 }
 
 let onKeyDown = (e) => {
