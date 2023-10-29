@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all except Streak modes)
 // @namespace    http://tampermonkey.net/
-// @version      11.0
+// @version      11.01
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -105,17 +105,8 @@ function setInnerText(){
                 Using the marker place functions are at your risk during the initial testing of this update
                 Open in Google maps should be fine.
                 `
-    const logoWrapper = document.querySelector('.header_logoWrapper__WNmfy');
-    const newHeading = document.createElement('h4');
-    newHeading.innerText = text
-
-    if (logoWrapper) {
-        // Remove all child elements of the selected div
-        while (logoWrapper.firstChild) {
-            logoWrapper.removeChild(logoWrapper.firstChild);
-        }
-        logoWrapper.appendChild(newHeading);
-    }
+    const logoWrapper = document.getElementsByClassName("header_logo__hQawV")[0]
+    logoWrapper.innerHTML = text
 }
 
 let onKeyDown = (e) => {
