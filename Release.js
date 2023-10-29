@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all except Streak modes)
 // @namespace    http://tampermonkey.net/
-// @version      11.01
+// @version      11.02
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -62,7 +62,17 @@ XMLHttpRequest.prototype.open = function(method, url) {
 // ====================================Placing Marker====================================
 
 function placeMarker(safeMode){
-    const {lat,lng} = globalCoordinates
+    let {lat,lng} = globalCoordinates
+
+
+    if (safeMode) { // applying random values to received coordinates.
+        const sway = [Math.random() > 0.5,Math.random() > 0.5]
+        const multiplier = Math.random() * 4
+        const horizontalAmount = Math.random() * multiplier
+        const verticalAmount = Math.random() * multiplier
+        sway[0] ? lat += verticalAmount : lat -= verticalAmount
+        sway[1] ? lng += horizontalAmount : lat -= horizontalAmount
+    }
 
     // Okay well played Geoguessr u got me there for a minute, but below should work.
     // Below is the only intentionally complicated part of the code - it won't be simplified or explained for good reason.
@@ -105,8 +115,10 @@ function setInnerText(){
                 Using the marker place functions are at your risk during the initial testing of this update
                 Open in Google maps should be fine.
                 `
-    const logoWrapper = document.getElementsByClassName("header_logo__hQawV")[0]
-    logoWrapper.innerText = text
+    if(document.getElementsByClassName("header_logo__hQawV")[0]){
+        const logoWrapper = document.getElementsByClassName("header_logo__hQawV")[0]
+        logoWrapper.innerText = text
+    }
 }
 
 let onKeyDown = (e) => {
