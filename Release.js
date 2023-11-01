@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      11.1
+// @version      11.20
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -75,7 +75,7 @@ function placeMarker(safeMode){
 
     // Okay well played Geoguessr u got me there for a minute, but below should work.
     // Below is the only intentionally complicated part of the code - it won't be simplified or explained for good reason.
-    let element = document.getElementsByClassName("guess-map_canvas__cvpqv")[0]
+    let element = document.getElementsByClassName("guess-map_canvas__JAHHT")[0]
     if(!element){
         placeMarkerStreaks()
         return
@@ -99,7 +99,7 @@ function placeMarker(safeMode){
 // again - will not be explained.
 function placeMarkerStreaks(){
     let {lat,lng} = globalCoordinates
-    let element = document.getElementsByClassName("region-map_mapCanvas__0dWlf")[0]
+    let element = document.getElementsByClassName("region-map_mapCanvas__R95Ki")[0]
     if(!element){
         console.log("unable to find map element")
         return
@@ -109,16 +109,14 @@ function placeMarkerStreaks(){
     const props = element[key]
     const x = props.return.return.memoizedProps.map.__e3_.click
     const y = Object.keys(x)
-    const w = "e=>{m(e.latLng.lat(),e.latLng.lng())}"
-    const z = y.find(a => x[a].xe.toString() === w)
-
+    const w = "(e.latLng.lat(),e.latLng.lng())}"
+    const z = y.find(a => x[a].xe.toString().slice(5) === w)
     const v = {
         latLng:{
             lat: () => lat,
             lng: () => lng,
         }
     }
-
     x[z].xe(v)
 }
 
@@ -157,8 +155,8 @@ function setInnerText(){
                 
                 Reminder that using the script is at your own risk - don't ruin other's fun.
                 `
-    if(document.getElementsByClassName("header_logo__hQawV")[0]){
-        const logoWrapper = document.getElementsByClassName("header_logo__hQawV")[0]
+    if(document.getElementsByClassName("header_logo__vV0HK")[0]){
+        const logoWrapper = document.getElementsByClassName("header_logo__vV0HK")[0]
         logoWrapper.innerText = text
     }
 }
