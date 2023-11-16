@@ -1,9 +1,125 @@
 # How I developed the Geoguessr script
-I only made this script to learn how to manipulate websites with userscripts so i'm sharing what i learnt.
+I only made this script to learn how to manipulate websites with userscripts, so I'm sharing what I learnt.
 
 I figured out all this on my own, so there is probably more efficient ways to do this and maybe some inaccurate info
 
-## How I made the Duels Guesser feature
+**If after reading this you learn something and have an idea on something you want added to the script, [Submit A pull request](https://github.com/0x978/GeoGuessr_Resolver)**
+
+## How we can fetch the correct coordinates.
+
+### Step 1) Brainstorming an effective, difficult to patch method
+
+First, we need to come up with an effective method for retrieving the coordinates. 
+
+I could just simply use React Props to find the coordinates and be done with it. 
+
+In fact, this worked fine for a very long time, but the developers began to patch out this method by making these properties point to the coordinates of alcatraz on each round...
+ - This meant we would constantly guess Alcatraz, rather than the correct location.
+
+We could still use this method, and keep adjusting it each time Geoguessr patched it out, but the nature of retrieving 
+these properties mean we would need different methods of fetching coordinates for each game mode (i.e., duels, single player, streaks...)
+
+Thus, we need to try think of ways which we can access the correct coordinates, regardless of game mode, whether the match is ranked and in such a way it is more difficult to patch...
+
+One common thread that we can notice is that **all game modes require the Google Maps API** in order to retrieve the street view image to display to the user.
+ - We thus know we have an API request to the Google Maps API we can look at, and see if there is anything interesting.
+
+### Step 2) Observe the API response
+If we simply open developer tools network tab when in a game of Geoguessr, we can see a range of API calls.
+
+We can shift through these (or filter) until we find one from the Google Maps API, such as the one below.
+ - There will be many API calls to Google Maps, shift through until you find something interesting in one of them...
+
+![img12.png](img/img12.png)
+
+We can now look at the API call, and see if we can pick out anything of interest...
+
+![img13.png](img/img13.png)
+
+These two highlighted values look like a pair of coordinates, so let's work on extracting them.
+
+### Step 3) Identifying how we could intercept API calls
+
+We can make a good prediction at how Geoguessr is making API calls, a pretty good guess is to look at `XMLHttpRequest`,
+who's object can be used to request data from web servers, without refreshing web pages to display it.
+
+We can identify a method on `XMLHttpRequest` called `open` which can be used to create a new request.
+
+We need to *intercept* requests made to the Google Maps API, such that we can read the response from the server.
+
+To do so we can override the `open` function on the `XMLHttpRequest` object, and rewrite it to do what we want.
+
+Consider the following:
+
+```js
+var originalOpen = XMLHttpRequest.prototype.open; 
+XMLHttpRequest.prototype.open = function(method, url) {
+    if (url.startsWith('https://maps.googleapis.com')) {
+
+        this.addEventListener('load', function () {
+            let interceptedResult = this.responseText
+            const pattern = /-?\d+\.\d+,-?\d+\.\d+/g;
+            let match = interceptedResult.match(pattern)[0];
+            let split = match.split(",")
+
+            let lat = Number.parseFloat(split[0])
+            let lng = Number.parseFloat(split[1])
+            globalCoordinates.lat = lat
+            globalCoordinates.lng = lng
+        });
+    }
+    // Call the original open function
+    return originalOpen.apply(this, arguments);
+};
+```
+Here we have successfully re-written the `open` function to do what we want.
+
+We start by identifying API requests which request URLs point to the Google Maps Api - we are only interested in such API calls.
+ - If it doesn't match, we will just allow the original function to be applied.
+
+Next we need to set up an [event listener](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener) on the `XMLHttpRequest` instance (`this` refers to the instance)
+
+We need to find an appropriate event to fire on. [A quick google gives us a valid answer](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/load_event).
+ - The `load` event runs when the `XMLHttpRequest` transaction has completed successfully, this is the perfect time to check out the response we receive.
+
+Inside the event listener, we can access the response text from the `XMLHttpRequest` instance through the `responseText` property.
+
+We now successfully have the response from the API stored in a variable.
+
+### Step 4) Retrieving the coordinates
+Our response text `interceptedResults` contains a lot of text we're not interested in.
+
+We can define a [Regular Expression](https://en.wikipedia.org/wiki/Regular_expression) which will pick out the coordinates.
+ - The Regex specifially looks for two pairs (seperated by a `,`) of a series of digits seperated into two parts with a `.` and optionally may be negative.
+
+Our variable `match` now contains the coordinates as a string.
+
+We can split this into an array of two strings, seperated by the comma with `let split = match.split(",")`
+
+We can then identify the latitude and longitude coordinates respectively, and parse them as integers.
+
+Next, we can define a global data structure which can be updated by this eventListener, such that each time a new API request from Google Maps comes in, this is updated.
+
+```js
+let globalCoordinates = { 
+    lat: 0,
+    lng: 0
+}
+```
+
+And then just simply update it inside the event listener.
+
+```js
+            globalCoordinates.lat = lat
+            globalCoordinates.lng = lng
+```
+
+Finally, with all this defined, we can just call the original `open` function and our event listener will now handle the rest.
+
+## How I made the Duels Guesser feature (PATCHED)
+
+***As expected, this method is now patched. The method we access (`onMarkerLocationChanged`) now restricts (and later bans) your account if you use it.
+However, the technique below can still be really useful for any other ideas you have.***
 
 So, Geoguessr uses React for development and design of the website. React stores important information in variables
 called “State” (https://react.dev/learn/state-a-components-memory).
