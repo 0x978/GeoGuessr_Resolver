@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      11.21
+// @version      11.3
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -20,18 +20,6 @@ let globalCoordinates = { // keep this stored globally, and we'll keep updating 
     lat: 0,
     lng: 0
 }
-
-// ==================================== ANTI-ANTI-cheat stuff ====================================
-window.open = (...e) =>{ // try to re-write window.open back to its native function.
-    nativeOpen(...e)
-}
-
-GM_webRequest([
-    { selector: 'https://www.geoguessr.com/api/v4/trails', action: 'cancel' },
-    { selector: 'https://www.geoguessr.com/api/v4/bdd406e4-c426-4d04-85b3-230f6fceef28', action: 'cancel' },
-    { selector: 'https://www.geoguessr.com/api/v4/b9bc4481-80c9-483a-a945-c24d935174f0', action: 'cancel' },
-]);
-// ==================================== Coordinate Interception ====================================
 
 // Below, I intercept the API call to Google Street view and view the result before it reaches the client.
 // Then I simply do some regex over the response string to find the coordinates, which Google gave to us in the response data
@@ -101,7 +89,6 @@ function placeMarkerStreaks(){
     let {lat,lng} = globalCoordinates
     let element = document.getElementsByClassName("region-map_mapCanvas__R95Ki")[0]
     if(!element){
-        console.log("unable to find map element")
         return
     }
     const keys = Object.keys(element)
@@ -126,40 +113,17 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
 
     const {lat,lng} = globalCoordinates
     if (!lat || !lng) {
-        console.log("Failed to fetch coords for Google Maps")
         return;
     }
 
     // Reject any attempt to call an overridden window.open, or fail .
-    if(window.open.toString().indexOf('native code') === -1){
-        console.log("Geoguessr has overridden window.open.")
-        if(nativeOpen && nativeOpen.toString().indexOf('native code') !== -1){
-            console.log("fallback enabled.")
-            nativeOpen(`https://maps.google.com/?q=${lat},${lng}&ll=${lat},${lng}&z=4`);
-        }
-    }
-    else{
-        window.open(`https://www.google.com/maps/place/${lat},${lng}`)
+    if(nativeOpen && nativeOpen.toString().indexOf('native code') === 19){
+        nativeOpen(`https://maps.google.com/?q=${lat},${lng}&ll=${lat},${lng}&z=4`);
     }
 }
 
 // ====================================Controls,setup, etc.====================================
 
-function setInnerText(){
-    const text = `
-                Geoguessr Resolver Loaded Successfully
-
-                IMPORTANT GEOGUESSR RESOLVER UPDATE INFORMATION:
-                
-                The script has been rewritten after a big update by the developers.
-                
-                Reminder that using the script is at your own risk - don't ruin other's fun.
-                `
-    if(document.getElementsByClassName("header_logo__vV0HK")[0]){
-        const logoWrapper = document.getElementsByClassName("header_logo__vV0HK")[0]
-        logoWrapper.innerText = text
-    }
-}
 
 let onKeyDown = (e) => {
     if (e.keyCode === 49) {
@@ -175,6 +139,5 @@ let onKeyDown = (e) => {
         mapsFromCoords(false)
     }
 }
-setInnerText()
-document.addEventListener("keydown", onKeyDown);
 
+document.addEventListener("keydown", onKeyDown);
