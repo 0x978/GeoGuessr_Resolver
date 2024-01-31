@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      11.31
+// @version      12
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -21,6 +21,8 @@ let globalCoordinates = { // keep this stored globally, and we'll keep updating 
     lng: 0
 }
 
+let globalPanoID = undefined
+
 // Below, I intercept the API call to Google Street view and view the result before it reaches the client.
 // Then I simply do some regex over the response string to find the coordinates, which Google gave to us in the response data
 // I then update a global variable above, with the correct coordinates, each time we receive a response from Google.
@@ -38,8 +40,17 @@ XMLHttpRequest.prototype.open = function(method, url) {
 
             let lat = Number.parseFloat(split[0])
             let lng = Number.parseFloat(split[1])
-            globalCoordinates.lat = lat
-            globalCoordinates.lng = lng
+
+            // Geoguessr now calls the Google Maps API multiple times each round, with subsequent requests overwriting
+            // the saved coordinates. We can just take the first instance of coordinates each round.
+            // We can use the PanoID to see if the round changed.
+            let localPanoID = getPanoID()
+            if(localPanoID !== globalPanoID){
+                globalCoordinates.lat = lat
+                globalCoordinates.lng = lng
+                console.log(globalCoordinates)
+                globalPanoID = localPanoID
+            }
         });
     }
     // Call the original open function
@@ -80,7 +91,7 @@ function placeMarker(safeMode){
             lng: () => lng,
         }
     }
-    x[y].xe(z)
+    x[y].em(z)
 }
 
 // similar idea as above, but with special considerations for the streaks modes.
@@ -104,7 +115,7 @@ function placeMarkerStreaks(){
             lng: () => lng,
         }
     }
-    x[z].xe(v)
+    x[z].em(v)
 }
 
 // ====================================Open In Google Maps====================================
@@ -120,6 +131,20 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
     if(nativeOpen && nativeOpen.toString().indexOf('native code') === 19){
         nativeOpen(`https://maps.google.com/?output=embed&q=${lat},${lng}&ll=${lat},${lng}&z=5`);
     }
+}
+
+// ====================================Utility stuff====================================
+
+// Gets the current panorama ID
+// There is multiple ways to get this, in case this one is patched
+function getPanoID(){
+    let panoElement = document.querySelectorAll('[data-qa="panorama"]')[0]
+    const keys = Object.keys(panoElement)
+    const reactKey = keys.find(key => key.startsWith("__reactFiber$"))
+    const reactProps = panoElement[reactKey]
+    const panoID = reactProps.return.memoizedProps.panoId
+
+    return panoID
 }
 
 // ====================================Controls,setup, etc.====================================
