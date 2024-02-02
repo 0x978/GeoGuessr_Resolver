@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      12
+// @version      12.1
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -48,7 +48,6 @@ XMLHttpRequest.prototype.open = function(method, url) {
             if(localPanoID !== globalPanoID){
                 globalCoordinates.lat = lat
                 globalCoordinates.lng = lng
-                console.log(globalCoordinates)
                 globalPanoID = localPanoID
             }
         });
@@ -91,7 +90,16 @@ function placeMarker(safeMode){
             lng: () => lng,
         }
     }
-    x[y].em(z)
+
+    const xy = x[y]
+    const a = Object.keys(x[y])
+
+    for(let i = 0; i < a.length ;i++){
+        let q = a[i]
+        if (typeof xy[q] === "function"){
+            xy[q](z)
+        }
+    }
 }
 
 // similar idea as above, but with special considerations for the streaks modes.
