@@ -122,7 +122,7 @@ function placeMarkerStreaks(){
         const curr = Object.keys(x[y[i]])
         let func = curr.find(l => typeof x[y[i]][l] === "function")
         let prop = x[y[i]][func]
-        if(prop.toString().slice(5) === w){
+        if(prop && prop.toString().slice(5) === w){
             prop(v)
         }
     }
