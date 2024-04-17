@@ -69,7 +69,8 @@ function placeMarker(safeMode){
 
     // Okay well played Geoguessr u got me there for a minute, but below should work.
     // Below is the only intentionally complicated part of the code - it won't be simplified or explained for good reason.
-    let element = document.getElementsByClassName("guess-map_canvas__JAHHT")[0]
+    // let element = document.getElementsByClassName("guess-map_canvas__JAHHT")[0]
+    let element = document.querySelectorAll('[class^="guess-map_canvas__"]')[0]
     if(!element){
         placeMarkerStreaks()
         return
