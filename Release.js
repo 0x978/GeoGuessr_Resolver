@@ -32,7 +32,9 @@ XMLHttpRequest.prototype.open = function(method, url) {
     // Geoguessr now calls the Google Maps API multiple times each round, with subsequent requests overwriting
     // the saved coordinates. Calls to this exact API path seems to be legitimate for now. A better solution than panoID currently?
     // Needs testing.
-    if (url.startsWith('https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/GetMetadata')) {
+    if (method.toUpperCase() === 'POST' &&
+        (url.startsWith('https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/GetMetadata') ||
+         url.startsWith('https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/SingleImageSearch'))) {
 
         this.addEventListener('load', function () {
             let interceptedResult = this.responseText
