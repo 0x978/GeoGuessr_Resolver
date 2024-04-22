@@ -138,9 +138,14 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
         return;
     }
 
-    // Reject any attempt to call an overridden window.open, or fail .
-    if(nativeOpen && nativeOpen.toString().indexOf('native code') === 19){
-        nativeOpen(`https://maps.google.com/?output=embed&q=${lat},${lng}&ll=${lat},${lng}&z=5`);
+    if (nativeOpen) {
+        const nativeOpenCodeIndex = nativeOpen.toString().indexOf('native code')
+
+        // Reject any attempt to call an overridden window.open, or fail.
+        // 19 is for chromium-based browsers; 23 is for firefox-based browsers.
+        if (nativeOpenCodeIndex === 19 || nativeOpenCodeIndex === 23) {
+            nativeOpen(`https://maps.google.com/?output=embed&q=${lat},${lng}&ll=${lat},${lng}&z=5`);
+        }
     }
 }
 
