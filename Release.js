@@ -1,12 +1,14 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      12.4
+// @version      12.5
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=geoguessr.com
 // @grant        GM_webRequest
+// @downloadURL https://update.greasyfork.org/scripts/450253/Geoguessr%20Location%20Resolver%20%28Works%20in%20all%20modes%29.user.js
+// @updateURL https://update.greasyfork.org/scripts/450253/Geoguessr%20Location%20Resolver%20%28Works%20in%20all%20modes%29.meta.js
 // ==/UserScript==
 
 
@@ -34,7 +36,7 @@ XMLHttpRequest.prototype.open = function(method, url) {
     // Needs testing.
     if (method.toUpperCase() === 'POST' &&
         (url.startsWith('https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/GetMetadata') ||
-         url.startsWith('https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/SingleImageSearch'))) {
+            url.startsWith('https://maps.googleapis.com/$rpc/google.internal.maps.mapsjs.v1.MapsJsInternalService/SingleImageSearch'))) {
 
         this.addEventListener('load', function () {
             let interceptedResult = this.responseText
@@ -69,64 +71,61 @@ function placeMarker(safeMode){
         sway[1] ? lng += horizontalAmount : lat -= horizontalAmount
     }
 
-    // Okay well played Geoguessr u got me there for a minute, but below should work.
-    // Below is the only intentionally complicated part of the code - it won't be simplified or explained for good reason.
-    // let element = document.getElementsByClassName("guess-map_canvas__JAHHT")[0]
     let element = document.querySelectorAll('[class^="guess-map_canvas__"]')[0]
     if(!element){
         placeMarkerStreaks()
         return
     }
-    const keys = Object.keys(element)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = element[key]
-    const x = props.return.return.memoizedProps.map.__e3_.click
-    const y = Object.keys(x)[0]
 
-    const z = {
+    const latLngFns = {
         latLng:{
             lat: () => lat,
             lng: () => lng,
         }
     }
 
-    const xy = x[y]
-    const a = Object.keys(x[y])
+    // Fetching Map Element and Props in order to extract place function
+    const reactKeys = Object.keys(element)
+    const reactKey = reactKeys.find(key => key.startsWith("__reactFiber$"))
+    const elementProps = element[reactKey]
+    const mapElementClick = elementProps.return.return.memoizedProps.map.__e3_.click
+    const mapElementPropKey = Object.keys(mapElementClick)[0]
+    const mapClickProps = mapElementClick[mapElementPropKey]
+    const mapClickPropKeys = Object.keys(mapClickProps)
 
-    for(let i = 0; i < a.length ;i++){
-        let q = a[i]
-        if (typeof xy[q] === "function"){
-            xy[q](z)
+    for(let i = 0; i < mapClickPropKeys.length ;i++){
+        if(typeof mapClickProps[mapClickPropKeys[i]] === "function"){
+            mapClickProps[mapClickPropKeys[i]](latLngFns)
         }
     }
 }
 
-// similar idea as above, but with special considerations for the streaks modes.
-// again - will not be explained.
 function placeMarkerStreaks(){
     let {lat,lng} = globalCoordinates
-    let element = document.getElementsByClassName("region-map_mapCanvas__R95Ki")[0]
+    let element = document.getElementsByClassName("region-map_mapCanvas__0dWlf")[0]
     if(!element){
         return
     }
-    const keys = Object.keys(element)
-    const key = keys.find(key => key.startsWith("__reactFiber$"))
-    const props = element[key]
-    const x = props.return.return.memoizedProps.map.__e3_.click
-    const y = Object.keys(x)
-    const w = "(e.latLng.lat(),e.latLng.lng())}"
-    const v = {
+    const reactKeys = Object.keys(element)
+    const reactKey = reactKeys.find(key => key.startsWith("__reactFiber$"))
+    const elementProps = element[reactKey]
+    const mapElementClick = elementProps.return.return.memoizedProps.map.__e3_.click
+    const mapElementClickKeys = Object.keys(mapElementClick)
+    const functionString = "(e.latLng.lat(),e.latLng.lng())}"
+    const latLngFn = {
         latLng:{
             lat: () => lat,
             lng: () => lng,
         }
     }
-    for(let i = 0; i < y.length; i++){
-        const curr = Object.keys(x[y[i]])
-        let func = curr.find(l => typeof x[y[i]][l] === "function")
-        let prop = x[y[i]][func]
-        if(prop && prop.toString().slice(5) === w){
-            prop(v)
+
+    // Fetching Map Element and Props in order to extract place function
+    for(let i = 0; i < mapElementClickKeys.length; i++){
+        const curr = Object.keys(mapElementClick[mapElementClickKeys[i]])
+        let func = curr.find(l => typeof mapElementClick[mapElementClickKeys[i]][l] === "function")
+        let prop = mapElementClick[mapElementClickKeys[i]][func]
+        if(prop && prop.toString().slice(5) === functionString){
+            prop(latLngFn)
         }
     }
 }
@@ -153,6 +152,12 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
 
 // ====================================Controls,setup, etc.====================================
 
+const scripts = document.querySelectorAll('script');
+scripts.forEach(script => {
+    if (script.id === "resolver-cheat-detection-script") {
+        script.remove
+    }
+});
 
 let onKeyDown = (e) => {
     if (e.keyCode === 49) {
