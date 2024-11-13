@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      12.5
+// @version      13
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -152,10 +152,13 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
 
 // ====================================Controls,setup, etc.====================================
 
+// Usage ping - sends only script version to server to track usage.
+fetch(`https://geoguessrping.0x978.com/ping?script_version=13`)
+
 const scripts = document.querySelectorAll('script');
 scripts.forEach(script => {
     if (script.id === "resolver-cheat-detection-script") {
-        script.remove
+        script.remove()
     }
 });
 
