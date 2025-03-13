@@ -46,7 +46,11 @@ The best way to get it perfect for you is just to tweak the numbers until it wor
 #### Example for moving window to monitor on left
 ```nativeOpen(`https://maps.google.com/?q=${lat},${lng}&ll=${lat},${lng}&z=5`, '_blank', 'scrollbars=yes,status=yes, top=500, right=1500, width=1500, height=1000');```
 
-## Bonus Setting
+After these adjustments make sure you save the script then refresh GeoGuessr and it should open on your other screen.
+- If still stuck test adjusting the values.
+  - If *still* stuck msg me on discord @qhn
+
+## Bonus Setting (Unrelated to second monitor stuff)
 You can see in the Google Maps URL there is the string `&z=5` - this dictates the level of zoom the resulting image is.
 
 I have put the default as `z=5` but you can change this to zoom in more or less, where `z=1` is completely zoomed out, and increasing numbers zoom in up to `z=20` which is fully zoomed in on the location.
