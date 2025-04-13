@@ -157,7 +157,7 @@ fetch(`https://geoguessrping.0x978.com/ping?script_version=13`)
 
 const scripts = document.querySelectorAll('script');
 scripts.forEach(script => {
-    if (script.id === "resolver-cheat-detection-script") {
+    if (script.id === "google-maps-cheat-detection-script") {
         script.remove()
     }
 });
