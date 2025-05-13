@@ -89,7 +89,8 @@ function placeMarker(safeMode){
     const reactKey = reactKeys.find(key => key.startsWith("__reactFiber$"))
     const elementProps = element[reactKey]
     const mapElementClick = elementProps.return.return.memoizedProps.map.__e3_.click
-    const mapElementPropKey = Object.keys(mapElementClick)[0]
+    const mapElementPropKeys = Object.keys(mapElementClick)
+    const mapElementPropKey = mapElementPropKeys[mapElementPropKeys.length - 1]
     const mapClickProps = mapElementClick[mapElementPropKey]
     const mapClickPropKeys = Object.keys(mapClickProps)
 
