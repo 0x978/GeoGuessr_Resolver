@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      13.2
+// @version      EOL
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -179,3 +179,11 @@ let onKeyDown = (e) => {
 }
 
 document.addEventListener("keydown", onKeyDown);
+
+let shownCount = parseInt(localStorage.getItem("geoguessr_resolver_discontinue_alert_count") || "0", 10);
+
+if (shownCount < 3) {
+    alert(`This script is discontinued. Please use: \n https://greasyfork.org/en/scripts/546581-geoguessr-location-resolver-external. \n \n This message has been shown ${shownCount + 1} out of 3 times, after which you will not see it again.`);
+    window.open("https://greasyfork.org/en/scripts/546581-geoguessr-location-resolver-external", "_blank");
+    localStorage.setItem("geoguessr_resolver_discontinue_alert_count", (shownCount + 1).toString());
+}
