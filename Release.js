@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geoguessr Location Resolver (Works in all modes)
 // @namespace    http://tampermonkey.net/
-// @version      14.1
+// @version      14.2
 // @description  Features: Automatically score 5000 Points | Score randomly between 4500 and 5000 points | Open in Google Maps
 // @author       0x978
 // @match        https://www.geoguessr.com/*
@@ -140,15 +140,8 @@ function mapsFromCoords() { // opens new Google Maps location using coords.
         return;
     }
 
-    if (nativeOpen) {
-        const nativeOpenCodeIndex = nativeOpen.toString().indexOf('native code')
 
-        // Reject any attempt to call an overridden window.open, or fail.
-        // 19 is for chromium-based browsers; 23 is for firefox-based browsers.
-        if (nativeOpenCodeIndex === 19 || nativeOpenCodeIndex === 23) {
-            nativeOpen(`https://maps.google.com/?output=embed&q=${lat},${lng}&ll=${lat},${lng}&z=5`);
-        }
-    }
+    window.open(`https://maps.google.com/?output=embed&q=${lat},${lng}&ll=${lat},${lng}&z=5`)
 }
 
 // ====================================Controls,setup, etc.====================================
